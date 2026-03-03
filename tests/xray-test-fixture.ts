@@ -226,6 +226,7 @@ export const test = base.extend<XrayFixtures>({
 
       appendTestResult({
         testCaseKey:  xrayKey,
+        testName:     testInfo.title,
         status:       xrayStatus,
         errorMessage,
         screenshotPath,

@@ -170,18 +170,23 @@ async function runPostRunTasks(state: NonNullable<ReturnType<typeof readXrayStat
       runDate:      today,
       environment:  config.app.environment,
       testResults:  state.results.map(r => ({
-        testCaseKey:  r.testCaseKey,
-        status:       (['PASS','FAIL','ABORTED','EXECUTING'].includes(r.status)
+        testCaseKey:    r.testCaseKey,
+        status:         (['PASS','FAIL','ABORTED','EXECUTING'].includes(r.status)
           ? r.status
           : 'ABORTED') as 'PASS' | 'FAIL' | 'ABORTED' | 'EXECUTING',
-        testName:     r.testCaseKey,
-        durationMs:   r.durationMs,
-        errorMessage: r.errorMessage,
+        testName:       r.testName ?? r.testCaseKey,
+        durationMs:     r.durationMs,
+        errorMessage:   r.errorMessage,
+        screenshotPath: r.screenshotPath,
+        startedAt:      r.startedAt,
+        finishedAt:     r.finishedAt,
       })),
       xrayLink:     state.executionKey !== 'NOT_CONFIGURED'
         ? `${process.env['JIRA_BASE_URL'] ?? ''}/browse/${state.executionKey}`
         : undefined,
-      jiraBaseUrl:  process.env['JIRA_BASE_URL'],
+      jiraBaseUrl:    process.env['JIRA_BASE_URL'],
+      sprintNumber:   state.sprintNumber,
+      runStartedAt:   state.runStartedAt,
       logEntries:   collectedData.logs,
       perfData:     collectedData.performance,
       a11yData:     collectedData.accessibility,

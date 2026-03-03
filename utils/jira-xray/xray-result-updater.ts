@@ -55,6 +55,9 @@ export interface TestResultPayload {
   // The JIRA key of the test case (e.g., "PROJ-101")
   testCaseKey: string;
 
+  // The human-readable test title (e.g., "TC01: Valid credentials should log the user in")
+  testName?: string;
+
   // Whether the test passed or failed: "PASS" or "FAIL"
   status: XrayTestStatus;
 

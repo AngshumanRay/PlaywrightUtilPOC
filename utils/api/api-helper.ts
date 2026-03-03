@@ -56,6 +56,10 @@ export interface ApiResponse<T = any> {
 //   An axios instance ready to make GET/POST/PUT/DELETE calls.
 // =============================================================================
 export function createApiClient(): AxiosInstance {
+  // If a dedicated API base URL is configured, use it.
+  // Otherwise fall back to the app base URL.
+  // NOTE: When tests pass absolute URLs (e.g. 'https://jsonplaceholder.typicode.com/posts/1'),
+  // axios will use the absolute URL directly and ignore baseURL — this is expected axios behavior.
   const baseURL = config.api.baseUrl || config.app.baseUrl;
 
   const client = axios.create({
@@ -74,7 +78,9 @@ export function createApiClient(): AxiosInstance {
 
   // Request interceptor — log every outgoing API call
   client.interceptors.request.use((req) => {
-    logger.info(`🌐 API → ${req.method?.toUpperCase()} ${req.baseURL}${req.url}`);
+    // Build the final URL — prefer the full resolved URL when available
+    const fullUrl = req.url?.startsWith('http') ? req.url : `${req.baseURL ?? ''}${req.url ?? ''}`;
+    logger.info(`🌐 API → ${req.method?.toUpperCase()} ${fullUrl}`);
     return req;
   });
 
