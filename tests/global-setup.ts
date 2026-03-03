@@ -27,7 +27,7 @@
 // CURRENT UTILITIES:
 //   🔹 JIRA XRAY — Fetch test cases, create Test Execution
 //   🔹 Database  — Seed test data before tests run
-//   🔹 Slack     — (setup only logs connection; actual send is in teardown)
+//   🔹 Slack     — removed (no longer in this framework)
 //   🔹 Email     — (per-test, not global; just logs status here)
 //   🔹 API       — (per-test, not global; just logs status here)
 //
@@ -51,7 +51,6 @@ import { createTestExecution }       from '../utils/jira-xray/xray-test-executio
 import { initializeXrayState }       from '../utils/jira-xray/xray-state';
 
 // Import optional utility status checkers
-import { isSlackConfigured }    from '../utils/slack/slack-notifier';
 import { isDbConfigured, seedTestData } from '../utils/database/test-data-manager';
 import { isEmailConfigured }    from '../utils/email/email-verifier';
 
@@ -91,7 +90,6 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   // ==========================================================================
   logger.section('📋 Utility Status Dashboard');
   logger.info(`  🔹 JIRA XRAY:  ${isJiraPlaceholder() ? '⚠️  Placeholder (will skip)' : '✅ Configured'}`);
-  logger.info(`  🔹 Slack:      ${isSlackConfigured() ? '✅ Configured' : '⚪ Not configured (will skip)'}`);
   logger.info(`  🔹 Database:   ${isDbConfigured() ? '✅ Configured' : '⚪ Not configured (will skip)'}`);
   logger.info(`  🔹 Email:      ${isEmailConfigured() ? '✅ Configured' : '⚪ Not configured (will skip)'}`);
   logger.info(`  🔹 API Helper: ${config.api.baseUrl ? '✅ Configured' : '⚪ Using BASE_URL as fallback'}`);

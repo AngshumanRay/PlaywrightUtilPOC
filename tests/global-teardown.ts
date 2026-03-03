@@ -8,20 +8,17 @@
 //   The counterpart to globalSetup. It runs after every single test is done.
 //   This is the perfect place to:
 //     - Upload all collected test results to XRAY
-//     - Send a Slack notification with the test summary
 //     - Clean up test data from the database
 //     - Generate a final report
 //
 // UTILITIES HANDLED HERE (each one skips gracefully if not configured):
 //   🔹 XRAY     — Upload PASS/FAIL results + screenshots to JIRA
-//   🔹 Slack    — Send test summary message to Slack channel
 //   🔹 Database — Clean up test data seeded during setup
 //
 // EXECUTION ORDER:
 //   1. Upload results to XRAY (if configured)
-//   2. Send Slack notification (if configured)
-//   3. Clean up database test data (if configured)
-//   4. Clean up state file
+//   2. Clean up database test data (if configured)
+//   3. Clean up state file
 // =============================================================================
 
 // Import Playwright's FullConfig type
@@ -33,7 +30,6 @@ import { readXrayState, clearXrayState }   from '../utils/jira-xray/xray-state';
 import { getTestExecutionStatus }          from '../utils/jira-xray/xray-test-execution';
 
 // Import optional utility functions
-import { isSlackConfigured, sendSlackNotification } from '../utils/slack/slack-notifier';
 import { isDbConfigured, cleanupTestData }          from '../utils/database/test-data-manager';
 
 // Import report generator (generates a beautiful HTML report with charts)
@@ -70,7 +66,7 @@ export default async function globalTeardown(_config: FullConfig): Promise<void>
   }
 
   // If the execution key is "NOT_CONFIGURED", XRAY upload is skipped,
-  // but we STILL want to generate the HTML report and send Slack notification.
+  // but we STILL want to generate the HTML report.
   if (state.executionKey === 'NOT_CONFIGURED') {
     logger.warn('XRAY was not configured (execution key is NOT_CONFIGURED).');
     logger.warn('Tests ran, but results were not uploaded to XRAY.');
@@ -142,7 +138,7 @@ export default async function globalTeardown(_config: FullConfig): Promise<void>
   }
 
   // ==========================================================================
-  // STEP 5: Generate Report + Slack + DB cleanup
+  // STEP 5: Generate Report + DB cleanup
   // ==========================================================================
   clearXrayState();
   await runPostRunTasks(state, _config);
@@ -153,7 +149,7 @@ export default async function globalTeardown(_config: FullConfig): Promise<void>
 // =============================================================================
 // HELPER: runPostRunTasks
 // =============================================================================
-// Runs the report generation, Slack notification, and DB cleanup.
+// Runs the report generation and DB cleanup.
 // Called both in the normal XRAY path AND the NOT_CONFIGURED path so the
 // HTML report is ALWAYS generated regardless of XRAY configuration.
 // =============================================================================
@@ -193,18 +189,6 @@ async function runPostRunTasks(state: NonNullable<ReturnType<typeof readXrayStat
     });
   } catch (err) {
     logger.warn(`Could not generate HTML report: ${(err as Error).message}`);
-  }
-
-  // Slack notification
-  if (isSlackConfigured()) {
-    logger.section('📨 SLACK — Sending Test Summary');
-    const totalTests    = state.results.length;
-    const passed        = state.results.filter(r => r.status === 'PASS').length;
-    const failed        = state.results.filter(r => r.status === 'FAIL').length;
-    const skipped       = totalTests - passed - failed;
-    const totalDuration = state.results.reduce((sum, r) => sum + (r.durationMs || 0), 0);
-    const failedNames   = state.results.filter(r => r.status === 'FAIL').map(r => r.testCaseKey);
-    await sendSlackNotification({ totalTests, passed, failed, skipped, durationMs: totalDuration, executionKey: state.executionKey, failedTests: failedNames });
   }
 
   // DB cleanup

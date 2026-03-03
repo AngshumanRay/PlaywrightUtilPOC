@@ -18,10 +18,9 @@
 2. [All Capabilities at a Glance](#all-capabilities-at-a-glance)
 3. [🌐 Browser Testing (Playwright)](#-browser-testing-playwright)
 4. [📋 JIRA XRAY Integration](#-jira-xray-integration)
-5. [💬 Slack Notifications](#-slack-notifications)
-6. [🗃️ Database / Test Data](#️-database--test-data)
-7. [📧 Email Verification](#-email-verification)
-8. [🌐 API Testing Helper](#-api-testing-helper)
+4. [🗃️ Database / Test Data](#️-database--test-data)
+5. [📧 Email Verification](#-email-verification)
+6. [🌐 API Testing Helper](#-api-testing-helper)
 9. [📸 Screenshot Capture](#-screenshot-capture)
 10. [📝 Logger](#-logger)
 11. [🍪 Cookie & Popup Handling](#-cookie--popup-handling)
@@ -34,7 +33,7 @@
 ## The One-Sentence Summary
 
 This framework opens a web browser, tests your website like a human would,
-and then tells JIRA (and optionally Slack, Database, Email) what happened.
+and then tells JIRA (and optionally Database, Email) what happened.
 
 ---
 
@@ -57,7 +56,6 @@ Here's everything this framework can do, at a glance:
 │                                                                          │
 │  🟡 READY (just add credentials in .env to activate):                    │
 │     📋 JIRA XRAY      — fetch test cases, create executions, push results│
-│     💬 Slack           — send test summary to a Slack channel            │
 │     🗃️ Database        — seed test data before, clean up after           │
 │     📧 Email           — check test mailbox for OTPs, reset links, etc. │
 │     🌐 API Helper      — call your backend APIs from inside tests        │
@@ -161,58 +159,6 @@ Nothing breaks. You see this friendly message and tests run normally:
 - `utils/jira-xray/xray-test-execution.ts` — creates test execution
 - `utils/jira-xray/xray-result-updater.ts` — uploads results
 - `utils/jira-xray/xray-state.ts` — shared file that passes data between phases
-
----
-
-## 💬 Slack Notifications
-
-### What is it?
-After all your tests finish, a message is automatically sent to a Slack channel
-with a summary: how many passed, how many failed, which ones failed, and a link
-to the JIRA Test Execution.
-
-### What does the Slack message look like?
-
-```
-┌──────────────────────────────────────────┐
-│ 🧪 Playwright Test Run Complete          │
-│ Environment: staging                     │
-│ Sprint: 5                                │
-│ Duration: 2m 15s                         │
-│                                          │
-│ Total: 10  ✅ Passed: 8  ❌ Failed: 2    │
-│                                          │
-│ XRAY Execution: PROJ-789 (clickable link)│
-│                                          │
-│ Failed Tests:                            │
-│ • PROJ-102                               │
-│ • PROJ-107                               │
-└──────────────────────────────────────────┘
-```
-
-### How to enable it?
-1. In Slack, create an Incoming Webhook:
-   - Go to https://api.slack.com/apps
-   - Create New App → "From scratch"
-   - Click "Incoming Webhooks" → Turn it ON
-   - Click "Add New Webhook to Workspace"
-   - Pick your channel (e.g., #test-results)
-   - Copy the Webhook URL
-2. Paste it in `.env`:
-
-```env
-SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T0000/B0000/xxxxxxxxxxxx
-SLACK_CHANNEL=#test-results
-```
-
-### What if I DON'T configure Slack?
-Nothing breaks. Slack is silently skipped. You see:
-```
-Slack not configured — skipping notification.
-```
-
-### Where is the code?
-- `utils/slack/slack-notifier.ts`
 
 ---
 
@@ -588,7 +534,6 @@ The framework will show your tool in the Utility Status Dashboard:
 ```
 📋 Utility Status Dashboard
   🔹 JIRA XRAY:  ✅ Configured
-  🔹 Slack:      ✅ Configured
   🔹 My Tool:    ✅ Configured          ← your new utility!
 ```
 
@@ -601,13 +546,12 @@ The framework will show your tool in the Utility Status Dashboard:
 | **`.env`** | Your private settings (URLs, passwords, API keys) |
 | **`config/environment.ts`** | Reads `.env` and makes it available as `config.xxx` |
 | **`tests/global-setup.ts`** | Runs ONCE before tests — XRAY setup, DB seed, utility checks |
-| **`tests/global-teardown.ts`** | Runs ONCE after tests — XRAY upload, Slack message, DB cleanup |
+| **`tests/global-teardown.ts`** | Runs ONCE after tests — XRAY upload, DB cleanup |
 | **`tests/xray-test-fixture.ts`** | Wraps every test with XRAY reporting + popup handling |
 | **`tests/login.test.ts`** | The actual test cases (your click/type/verify steps) |
 | **`pages/BasePage.ts`** | Reusable browser actions — click, fill, navigate, wait |
 | **`pages/LoginPage.ts`** | Login page specific actions — enter username, click login |
 | **`utils/jira-xray/*.ts`** | Everything JIRA/XRAY — auth, fetch tests, create execution, upload results |
-| **`utils/slack/slack-notifier.ts`** | Sends test summary to Slack |
 | **`utils/database/test-data-manager.ts`** | Seeds and cleans up test data in your database |
 | **`utils/email/email-verifier.ts`** | Waits for emails, extracts OTP codes and links |
 | **`utils/api/api-helper.ts`** | Makes GET/POST/PUT/DELETE API calls |
@@ -626,7 +570,6 @@ Every utility is controlled by your `.env` file. Here's the master switch for ea
 |---------|--------------|----------------|
 | **Playwright** | Always on (it's the core) | Can't disable |
 | **JIRA XRAY** | Set real values for `JIRA_BASE_URL`, `JIRA_USERNAME`, `JIRA_API_TOKEN` | Leave the placeholder values |
-| **Slack** | Set `SLACK_WEBHOOK_URL` to your real webhook URL | Leave placeholder or set empty |
 | **Database** | Set `DB_ENABLED=true` + fill connection details | Set `DB_ENABLED=false` |
 | **Email** | Set `EMAIL_ENABLED=true` + fill API key | Set `EMAIL_ENABLED=false` |
 | **API Helper** | Set `API_BASE_URL` (optional — defaults to `BASE_URL`) | Leave empty |

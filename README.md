@@ -86,8 +86,6 @@ project-root/
 │   │   ├── xray-test-execution.ts←   Create Test Execution in JIRA
 │   │   ├── xray-result-updater.ts←   Update PASS/FAIL results in JIRA
 │   │   └── xray-state.ts         ←   Shared state file during test run
-│   ├── slack/                    ← Slack notifications
-│   │   └── slack-notifier.ts     ←   Send test summary to Slack channel
 │   ├── database/                 ← Database / test data management
 │   │   └── test-data-manager.ts  ←   Seed, query, and cleanup test data
 │   ├── email/                    ← Email verification

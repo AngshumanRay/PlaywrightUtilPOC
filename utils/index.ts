@@ -8,11 +8,10 @@
 //
 // WITHOUT barrel file (verbose, hard to remember):
 //   import { logger } from '../utils/helpers/logger';
-//   import { sendSlackNotification } from '../utils/slack/slack-notifier';
 //   import { seedTestData } from '../utils/database/test-data-manager';
 //
 // WITH barrel file (simple, one import source):
-//   import { logger, sendSlackNotification, seedTestData } from '../utils';
+//   import { logger, seedTestData } from '../utils';
 //
 // HOW TO ADD A NEW UTILITY:
 //   1. Create your utility folder under utils/ (e.g., utils/my-new-tool/)
@@ -32,9 +31,6 @@ export { fetchTestCasesFromTestSet }               from './jira-xray/xray-test-s
 export { createTestExecution, getTestExecutionStatus } from './jira-xray/xray-test-execution';
 export { updateMultipleTestResults }               from './jira-xray/xray-result-updater';
 export { initializeXrayState, readXrayState, appendTestResult, clearXrayState } from './jira-xray/xray-state';
-
-// Slack
-export { isSlackConfigured, sendSlackNotification } from './slack/slack-notifier';
 
 // Database — legacy manager
 export { isDbConfigured, seedTestData, queryTestData, cleanupTestData } from './database/test-data-manager';

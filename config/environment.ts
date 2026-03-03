@@ -125,18 +125,6 @@ export const config = {
   },
 
   // --------------------------------------------------------------------------
-  // SLACK NOTIFICATIONS (Optional)
-  // --------------------------------------------------------------------------
-  // Send test run summaries to a Slack channel after tests finish.
-  // To enable: set SLACK_WEBHOOK_URL to your Slack Incoming Webhook URL.
-  // To disable: leave it empty or set to the placeholder value.
-  // --------------------------------------------------------------------------
-  slack: {
-    webhookUrl: getOptionalEnvVar('SLACK_WEBHOOK_URL', ''),
-    channel:    getOptionalEnvVar('SLACK_CHANNEL', '#test-results'),
-  },
-
-  // --------------------------------------------------------------------------
   // DATABASE / TEST DATA (Optional)
   // --------------------------------------------------------------------------
   // Seed and clean up test data before/after test runs.
