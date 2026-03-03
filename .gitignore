@@ -21,6 +21,12 @@ node_modules/
 test-results/
 playwright-report/
 
+# Custom HTML execution reports (auto-generated after each run)
+reports/
+
+# Log files (auto-generated, rotated daily)
+logs/
+
 # TypeScript compiled output
 dist/
 

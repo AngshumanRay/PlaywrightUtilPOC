@@ -177,6 +177,66 @@ export const config = {
     baseUrl:   getOptionalEnvVar('API_BASE_URL', ''),
     authToken: getOptionalEnvVar('API_AUTH_TOKEN', ''),
   },
+
+  // --------------------------------------------------------------------------
+  // EXECUTION MODES
+  // --------------------------------------------------------------------------
+  // Control HOW tests run without changing code.
+  // All these can also be set as CLI environment variables:
+  //   RUN_HEADLESS=false npm test   ← shows browser window
+  //   RUN_PARALLEL=true npm test    ← runs tests in parallel
+  // --------------------------------------------------------------------------
+  execution: {
+    /** true = no visible browser window (faster); false = show browser (debug) */
+    headless:  getOptionalEnvVar('RUN_HEADLESS', 'true') === 'true',
+
+    /** true = test files run simultaneously (faster but uses more CPU) */
+    parallel:  getOptionalEnvVar('RUN_PARALLEL', 'false') === 'true',
+
+    /** How many parallel workers (test processes) to use */
+    workers:   parseInt(getOptionalEnvVar('RUN_WORKERS', '2'), 10),
+
+    /** How many times to retry a failed test (0 = no retries) */
+    retries:   parseInt(getOptionalEnvVar('RUN_RETRIES', '0'), 10),
+  },
+
+  // --------------------------------------------------------------------------
+  // LOGGING
+  // --------------------------------------------------------------------------
+  // Controls how much information is written to the terminal and log files.
+  // --------------------------------------------------------------------------
+  logging: {
+    /** Log detail level: 'debug' | 'info' | 'warn' | 'error' */
+    level:       getOptionalEnvVar('LOG_LEVEL', 'info'),
+
+    /** true = write logs to logs/test-run-YYYY-MM-DD.log */
+    toFile:      getOptionalEnvVar('LOG_TO_FILE', 'true') === 'true',
+
+    /** How many days of log files to keep before auto-deleting old ones */
+    maxFileDays: parseInt(getOptionalEnvVar('LOG_FILE_MAX_DAYS', '14'), 10),
+  },
+
+  // --------------------------------------------------------------------------
+  // SECURITY / ENCRYPTION
+  // --------------------------------------------------------------------------
+  // When ENCRYPTION_KEY is set, all DB passwords and secrets are stored
+  // encrypted. Use: npm run encrypt-password to generate an encrypted value.
+  // --------------------------------------------------------------------------
+  security: {
+    /** Secret key for AES-256 encryption (min 16 chars) */
+    encryptionKey: getOptionalEnvVar('ENCRYPTION_KEY', ''),
+  },
+
+  // --------------------------------------------------------------------------
+  // REPORTING
+  // --------------------------------------------------------------------------
+  // Controls the HTML execution report generated after every test run.
+  // Output: reports/execution-report-YYYY-MM-DD.html
+  // --------------------------------------------------------------------------
+  reporting: {
+    /** Folder where the HTML report is saved */
+    outputDir: getOptionalEnvVar('REPORT_OUTPUT_DIR', 'reports'),
+  },
 };
 
 // Export the type of the config so TypeScript can check it elsewhere

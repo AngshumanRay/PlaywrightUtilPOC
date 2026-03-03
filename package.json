@@ -5,11 +5,28 @@
   "scripts": {
     "test": "npx playwright test",
     "test:login": "npx playwright test tests/login.test.ts",
-    "test:headed": "npx playwright test --headed",
+
+    "test:headed": "RUN_HEADLESS=false npx playwright test",
+    "test:headless": "RUN_HEADLESS=true npx playwright test",
     "test:debug": "npx playwright test --debug",
     "test:ui": "npx playwright test --ui",
+
     "test:chromium": "npx playwright test --project=chromium",
+    "test:firefox": "npx playwright test --project=firefox",
+    "test:webkit": "npx playwright test --project=webkit",
+
+    "test:parallel": "RUN_PARALLEL=true RUN_WORKERS=4 npx playwright test",
+    "test:single": "RUN_PARALLEL=false RUN_WORKERS=1 npx playwright test",
+
+    "test:env:staging": "TEST_ENVIRONMENT=staging npx playwright test",
+    "test:env:prod": "TEST_ENVIRONMENT=production npx playwright test",
+    "test:env:dev": "TEST_ENVIRONMENT=dev npx playwright test",
+
+    "test:ci": "CI=true npx playwright test",
     "test:report": "npx playwright show-report",
+
+    "encrypt-password": "npx ts-node utils/security/crypto-helper.ts",
+
     "lint": "npx tsc --noEmit"
   },
   "keywords": [],
@@ -19,9 +36,24 @@
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@types/node": "^25.3.2",
+    "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.18.0",
+    "@types/winston": "^2.4.4",
     "axios": "^1.13.6",
     "dotenv": "^17.3.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@axe-core/playwright": "^4.11.1",
+    "@types/crypto-js": "^4.2.2",
+    "crypto-js": "^4.2.0",
+    "exceljs": "^4.4.0",
+    "mysql2": "^3.18.2",
+    "node-cron": "^4.2.1",
+    "pg": "^8.19.0",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0",
+    "xlsx": "^0.18.5"
   }
 }

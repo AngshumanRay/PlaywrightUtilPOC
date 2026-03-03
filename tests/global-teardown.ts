@@ -36,8 +36,17 @@ import { getTestExecutionStatus }          from '../utils/jira-xray/xray-test-ex
 import { isSlackConfigured, sendSlackNotification } from '../utils/slack/slack-notifier';
 import { isDbConfigured, cleanupTestData }          from '../utils/database/test-data-manager';
 
+// Import report generator (generates a beautiful HTML report with charts)
+import { generateReport } from '../utils/reporting/report-generator';
+
+// Import enhanced logger (collects structured data for the report)
+import { enhancedLogger } from '../utils/helpers/enhanced-logger';
+
 // Import logger
 import { logger } from '../utils/helpers/logger';
+
+// Import config
+import { config } from '../config/environment';
 
 // =============================================================================
 // GLOBAL TEARDOWN FUNCTION
@@ -60,11 +69,15 @@ export default async function globalTeardown(_config: FullConfig): Promise<void>
     return;
   }
 
-  // If the execution key is "NOT_CONFIGURED", XRAY setup was skipped
+  // If the execution key is "NOT_CONFIGURED", XRAY upload is skipped,
+  // but we STILL want to generate the HTML report and send Slack notification.
   if (state.executionKey === 'NOT_CONFIGURED') {
     logger.warn('XRAY was not configured (execution key is NOT_CONFIGURED).');
     logger.warn('Tests ran, but results were not uploaded to XRAY.');
     clearXrayState();
+
+    // Still generate the HTML report even without XRAY
+    await runPostRunTasks(state, _config);
     return;
   }
 
@@ -129,51 +142,108 @@ export default async function globalTeardown(_config: FullConfig): Promise<void>
   }
 
   // ==========================================================================
-  // STEP 5: Clean Up State File
+  // STEP 5: Generate Comprehensive HTML Execution Report
   // ==========================================================================
-  clearXrayState();
+  // This creates a self-contained HTML file with charts, performance data,
+  // accessibility results, and step-by-step logs. Share it with your team!
+  // Output: reports/execution-report-YYYY-MM-DD.html
+  // ==========================================================================
+  logger.section('📊 REPORT — Generating HTML Execution Report');
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const collectedData = enhancedLogger.getCollectedData();
 
-  // ==========================================================================
-  // SLACK: Send Test Summary Notification (if configured)
-  // ==========================================================================
-  // After XRAY upload is done, send a summary to Slack so the team knows.
-  // This runs even if XRAY was not configured — Slack is independent.
-  // ==========================================================================
-  if (isSlackConfigured()) {
-    logger.section('📨 SLACK — Sending Test Summary');
-
-    const totalTests = state.results.length;
-    const passed     = state.results.filter((r) => r.status === 'PASS').length;
-    const failed     = state.results.filter((r) => r.status === 'FAIL').length;
-    const skipped    = totalTests - passed - failed;
-    const totalDuration = state.results.reduce((sum, r) => sum + (r.durationMs || 0), 0);
-    const failedNames   = state.results
-      .filter((r) => r.status === 'FAIL')
-      .map((r) => r.testCaseKey);
-
-    await sendSlackNotification({
-      totalTests,
-      passed,
-      failed,
-      skipped,
-      durationMs:    totalDuration,
-      executionKey:  state.executionKey,
-      failedTests:   failedNames,
+    await generateReport({
+      runDate:      today,
+      environment:  config.app.environment,
+      testResults:  state.results.map(r => ({
+        testCaseKey:  r.testCaseKey,
+        status:       (['PASS','FAIL','ABORTED','EXECUTING'].includes(r.status)
+          ? r.status
+          : 'ABORTED') as 'PASS' | 'FAIL' | 'ABORTED' | 'EXECUTING',
+        testName:     r.testCaseKey,
+        durationMs:   r.durationMs,
+        errorMessage: r.errorMessage,
+      })),
+      xrayLink:     state.executionKey !== 'NOT_CONFIGURED'
+        ? `${process.env['JIRA_BASE_URL'] ?? ''}/browse/${state.executionKey}`
+        : undefined,
+      jiraBaseUrl:  process.env['JIRA_BASE_URL'],
+      logEntries:   collectedData.logs,
+      perfData:     collectedData.performance,
+      a11yData:     collectedData.accessibility,
     });
-  } else {
-    logger.info('Slack not configured — skipping notification.');
+  } catch (err) {
+    logger.warn(`Could not generate HTML report: ${(err as Error).message}`);
   }
 
   // ==========================================================================
-  // DATABASE: Clean Up Seeded Test Data (if configured)
+  // STEP 6: Clean Up State File
   // ==========================================================================
-  // Remove any test data that was seeded during global setup.
-  // This keeps the database clean between test runs.
   // ==========================================================================
+  // STEP 5: Generate Report + Slack + DB cleanup
+  // ==========================================================================
+  clearXrayState();
+  await runPostRunTasks(state, _config);
+
+  logger.section('✅ GLOBAL TEARDOWN COMPLETE — All done!\n   📂 Check reports/ for the HTML execution report.');
+}
+
+// =============================================================================
+// HELPER: runPostRunTasks
+// =============================================================================
+// Runs the report generation, Slack notification, and DB cleanup.
+// Called both in the normal XRAY path AND the NOT_CONFIGURED path so the
+// HTML report is ALWAYS generated regardless of XRAY configuration.
+// =============================================================================
+import { type FullConfig as _FullConfig } from '@playwright/test';
+
+async function runPostRunTasks(state: NonNullable<ReturnType<typeof readXrayState>>, _config: _FullConfig): Promise<void> {
+  // Generate HTML report
+  logger.section('📊 REPORT — Generating HTML Execution Report');
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const collectedData = enhancedLogger.getCollectedData();
+
+    await generateReport({
+      runDate:      today,
+      environment:  config.app.environment,
+      testResults:  state.results.map(r => ({
+        testCaseKey:  r.testCaseKey,
+        status:       (['PASS','FAIL','ABORTED','EXECUTING'].includes(r.status)
+          ? r.status
+          : 'ABORTED') as 'PASS' | 'FAIL' | 'ABORTED' | 'EXECUTING',
+        testName:     r.testCaseKey,
+        durationMs:   r.durationMs,
+        errorMessage: r.errorMessage,
+      })),
+      xrayLink:     state.executionKey !== 'NOT_CONFIGURED'
+        ? `${process.env['JIRA_BASE_URL'] ?? ''}/browse/${state.executionKey}`
+        : undefined,
+      jiraBaseUrl:  process.env['JIRA_BASE_URL'],
+      logEntries:   collectedData.logs,
+      perfData:     collectedData.performance,
+      a11yData:     collectedData.accessibility,
+    });
+  } catch (err) {
+    logger.warn(`Could not generate HTML report: ${(err as Error).message}`);
+  }
+
+  // Slack notification
+  if (isSlackConfigured()) {
+    logger.section('📨 SLACK — Sending Test Summary');
+    const totalTests    = state.results.length;
+    const passed        = state.results.filter(r => r.status === 'PASS').length;
+    const failed        = state.results.filter(r => r.status === 'FAIL').length;
+    const skipped       = totalTests - passed - failed;
+    const totalDuration = state.results.reduce((sum, r) => sum + (r.durationMs || 0), 0);
+    const failedNames   = state.results.filter(r => r.status === 'FAIL').map(r => r.testCaseKey);
+    await sendSlackNotification({ totalTests, passed, failed, skipped, durationMs: totalDuration, executionKey: state.executionKey, failedTests: failedNames });
+  }
+
+  // DB cleanup
   if (isDbConfigured()) {
     logger.section('🗃️  DATABASE — Cleaning Up Test Data');
     await cleanupTestData();
   }
-
-  logger.section('✅ GLOBAL TEARDOWN COMPLETE — All done!');
 }

@@ -23,6 +23,7 @@
 
 // Helpers (shared by all utilities)
 export { logger }                         from './helpers/logger';
+export { enhancedLogger }                 from './helpers/enhanced-logger';
 export { captureScreenshot, captureFailureScreenshot } from './helpers/screenshot';
 
 // JIRA XRAY
@@ -35,11 +36,24 @@ export { initializeXrayState, readXrayState, appendTestResult, clearXrayState } 
 // Slack
 export { isSlackConfigured, sendSlackNotification } from './slack/slack-notifier';
 
-// Database
+// Database — legacy manager
 export { isDbConfigured, seedTestData, queryTestData, cleanupTestData } from './database/test-data-manager';
+
+// Database — secure connection (new)
+export { DbConnection, isDbEnabled }      from './database/db-connection';
 
 // Email
 export { isEmailConfigured, waitForEmail, extractVerificationCode, extractLink } from './email/email-verifier';
 
 // API
 export { createApiClient, apiGet, apiPost, apiPut, apiDelete } from './api/api-helper';
+
+// Excel / Data Pool
+export { readExcelSheet, readExcelAllSheets, getExcelSheetNames, writeExcelResults } from './excel/excel-reader';
+export { DataPool }                       from './excel/data-pool';
+
+// Security / Encryption
+export { encrypt, decrypt, hashPassword, isEncryptionConfigured } from './security/crypto-helper';
+
+// Reporting
+export { generateReport }                 from './reporting/report-generator';

@@ -50,36 +50,27 @@ export default defineConfig({
   // ==========================================================================
   // PARALLEL EXECUTION
   // ==========================================================================
-  // Should test FILES run in parallel (at the same time)?
-  // true  = Multiple test files run simultaneously (faster, but uses more memory)
-  // false = Test files run one after another (slower, but easier to debug)
+  // fullyParallel: true  = test FILES run in parallel (faster, more CPU)
+  // fullyParallel: false = test files run one after another (safer for beginners)
   //
-  // RECOMMENDATION FOR BEGINNERS: Set to false first, then enable when stable.
-  fullyParallel: false,
+  // Controlled by RUN_PARALLEL=true in .env, defaults to false
+  fullyParallel: (process.env['RUN_PARALLEL'] ?? 'false') === 'true',
 
   // ==========================================================================
   // WORKERS (PARALLEL TEST PROCESSES)
   // ==========================================================================
-  // How many test workers (separate Node.js processes) to use.
-  // More workers = faster, but more RAM/CPU usage.
-  //
-  // "process.env.CI ? 1 : 2" means:
-  //   - On CI (Continuous Integration, like GitHub Actions): Use 1 worker (stable)
-  //   - On your local machine: Use 2 workers (faster)
-  workers: process.env['CI'] ? 1 : 2,
+  // RUN_WORKERS in .env overrides the default.
+  //   LOCAL:    2 workers  → RUN_WORKERS=2
+  //   CI/CD:    1 worker   → RUN_WORKERS=1
+  //   FAST:     4 workers  → RUN_WORKERS=4
+  workers: process.env['CI'] ? 1 : parseInt(process.env['RUN_WORKERS'] ?? '2', 10),
 
   // ==========================================================================
   // RETRIES ON FAILURE
   // ==========================================================================
-  // How many times to retry a FAILED test before marking it as failed.
-  //
-  // Why retry? Some tests fail due to temporary issues (slow network, flaky UI).
-  // Retrying catches these "flaky" failures without human intervention.
-  //
-  // "process.env.CI ? 2 : 0" means:
-  //   - On CI: Retry up to 2 times (CI environments can be slower)
-  //   - Locally: No retries (if it fails locally, we want to know immediately)
-  retries: process.env['CI'] ? 2 : 0,
+  // RUN_RETRIES in .env overrides default.
+  // CI retries 2 times; local retries 0 by default.
+  retries: process.env['CI'] ? 2 : parseInt(process.env['RUN_RETRIES'] ?? '0', 10),
 
   // ==========================================================================
   // TEST TIMEOUT
@@ -158,12 +149,12 @@ export default defineConfig({
     // ------------------------------------------------------------------------
     // HEADLESS MODE
     // ------------------------------------------------------------------------
-    // headless: true  = Run browser in the BACKGROUND (no visible window) — faster
-    // headless: false = Show the browser window — good for debugging
+    // headless: true  = No browser window (faster, used in CI/CD)
+    // headless: false = Browser window visible (great for watching/debugging)
     //
-    // "process.env.CI ? true : true" always runs headless.
-    // Change to "false" locally when you want to WATCH the tests run.
-    headless: true,
+    // Set in .env:  RUN_HEADLESS=false   to watch tests run
+    // Or via CLI:   npm run test:headed
+    headless: (process.env['RUN_HEADLESS'] ?? 'true') === 'true',
 
     // ------------------------------------------------------------------------
     // SCREENSHOT ON FAILURE
@@ -233,50 +224,46 @@ export default defineConfig({
     {
       // -----------------------------------------------------------------------
       // PROJECT 1: Chromium (Google Chrome / Microsoft Edge engine)
+      // Run with: npm test  OR  npm run test:chromium
       // -----------------------------------------------------------------------
-      // Chromium is the open-source base of both Chrome and Edge.
-      // This is the most widely used browser — always include it.
       name: 'chromium',
       use: {
-        ...devices['Desktop Chrome'],  // Use default Chrome-like settings
+        ...devices['Desktop Chrome'],
       },
     },
 
     // -----------------------------------------------------------------------
-    // PROJECT 2: Firefox (Mozilla Firefox)
+    // PROJECT 2: Firefox — uncomment to run cross-browser tests
+    // Run with: npm run test:firefox
     // -----------------------------------------------------------------------
-    // Uncomment this block to also run tests in Firefox.
-    // Useful to catch browser-specific bugs.
-    //
     // {
     //   name: 'firefox',
-    //   use: {
-    //     ...devices['Desktop Firefox'],
-    //   },
+    //   use: { ...devices['Desktop Firefox'] },
     // },
 
     // -----------------------------------------------------------------------
-    // PROJECT 3: WebKit (Apple Safari engine)
+    // PROJECT 3: WebKit (Safari) — uncomment for Safari testing
+    // Run with: npm run test:webkit
     // -----------------------------------------------------------------------
-    // Uncomment to test in Safari (important for iOS/macOS users).
-    //
     // {
     //   name: 'webkit',
-    //   use: {
-    //     ...devices['Desktop Safari'],
-    //   },
+    //   use: { ...devices['Desktop Safari'] },
     // },
 
     // -----------------------------------------------------------------------
-    // PROJECT 4: Mobile Chrome
+    // PROJECT 4: Mobile Chrome — uncomment for mobile testing
     // -----------------------------------------------------------------------
-    // Uncomment to test on a simulated mobile device (Google Pixel 5).
-    //
     // {
     //   name: 'Mobile Chrome',
-    //   use: {
-    //     ...devices['Pixel 5'],
-    //   },
+    //   use: { ...devices['Pixel 5'] },
+    // },
+
+    // -----------------------------------------------------------------------
+    // PROJECT 5: Mobile Safari — uncomment for iPhone testing
+    // -----------------------------------------------------------------------
+    // {
+    //   name: 'Mobile Safari',
+    //   use: { ...devices['iPhone 14'] },
     // },
   ],
 

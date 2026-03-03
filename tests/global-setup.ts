@@ -55,7 +55,13 @@ import { isSlackConfigured }    from '../utils/slack/slack-notifier';
 import { isDbConfigured, seedTestData } from '../utils/database/test-data-manager';
 import { isEmailConfigured }    from '../utils/email/email-verifier';
 
-// Import the config (reads from .env)
+// Import enhanced logger (collects structured data for the HTML report)
+import { enhancedLogger }       from '../utils/helpers/enhanced-logger';
+
+// Import encryption helper (check if passwords are protected)
+import { isEncryptionConfigured } from '../utils/security/crypto-helper';
+
+// Import config (reads from .env)
 import { config } from '../config/environment';
 
 // Import the logger
@@ -89,6 +95,13 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   logger.info(`  🔹 Database:   ${isDbConfigured() ? '✅ Configured' : '⚪ Not configured (will skip)'}`);
   logger.info(`  🔹 Email:      ${isEmailConfigured() ? '✅ Configured' : '⚪ Not configured (will skip)'}`);
   logger.info(`  🔹 API Helper: ${config.api.baseUrl ? '✅ Configured' : '⚪ Using BASE_URL as fallback'}`);
+  logger.info(`  🔹 Encryption: ${isEncryptionConfigured() ? '✅ ENCRYPTION_KEY set' : '⚠️  Not set (passwords stored as plain text)'}`);
+  logger.info(`  🔹 Log to File:${process.env['LOG_TO_FILE'] !== 'false' ? ' ✅ Enabled (logs/ folder)' : ' ⚪ Disabled'}`);
+  logger.info(`  🔹 Log Level:  ${process.env['LOG_LEVEL'] ?? 'info'}`);
+
+  // Clear any previous run's collected data in enhanced logger
+  enhancedLogger.clear();
+  enhancedLogger.info('Framework initialized', 'GlobalSetup');
 
   // ==========================================================================
   // JIRA/XRAY SETUP
