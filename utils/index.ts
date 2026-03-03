@@ -13,6 +13,16 @@
 // WITH barrel file (simple, one import source):
 //   import { logger, seedTestData } from '../utils';
 //
+// CURRENT UTILITIES IN THIS BARREL:
+//   🔹 Helpers      — logger, enhancedLogger, screenshot
+//   🔹 JIRA XRAY    — auth, test set, execution, result updater, state
+//   🔹 Database     — test-data-manager (legacy), db-connection (secure)
+//   🔹 Email        — email-verifier
+//   🔹 API          — api-helper (GET/POST/PUT/DELETE)
+//   🔹 Excel        — excel-reader, data-pool
+//   🔹 Security     — crypto-helper (AES-256 encrypt/decrypt)
+//   🔹 Reporting    — report-generator (HTML execution report)
+//
 // HOW TO ADD A NEW UTILITY:
 //   1. Create your utility folder under utils/ (e.g., utils/my-new-tool/)
 //   2. Create your utility file(s) inside it

@@ -17,28 +17,26 @@
 //     - Seeding test data in a database
 //     - Verifying all utility connections are healthy
 //
-// UTILITIES MANAGED HERE:
-//   This setup handles MULTIPLE utilities. Each one is optional and skipped
-//   gracefully if not configured. Add new utilities by following the pattern:
-//     1. Import the utility's check function (e.g., isSlackConfigured)
-//     2. Add a setup step that runs only if the utility is configured
-//     3. Log a clear message either way so the user knows what happened
+// CURRENT UTILITIES MANAGED HERE:
+//   🔹 JIRA XRAY  — Fetch test cases, create Test Execution (skipped if not configured)
+//   🔹 Database   — Seed test data before tests run (skipped if DB_ENABLED=false)
+//   🔹 Email      — Status check only (actual email use happens inside individual tests)
+//   🔹 API Helper — Status check only (actual API calls happen inside individual tests)
+//   🔹 Encryption — Status check only (usage is per-utility, no global setup needed)
 //
-// CURRENT UTILITIES:
-//   🔹 JIRA XRAY — Fetch test cases, create Test Execution
-//   🔹 Database  — Seed test data before tests run
-//   🔹 Slack     — removed (no longer in this framework)
-//   🔹 Email     — (per-test, not global; just logs status here)
-//   🔹 API       — (per-test, not global; just logs status here)
+// TO ADD A NEW UTILITY:
+//   1. Import the utility's check function (e.g., isMyToolConfigured)
+//   2. Add it to the Utility Status Dashboard log section
+//   3. If it needs one-time global setup, add a step after the DB section
 //
 // EXECUTION FLOW (what happens when you run "npm test"):
 //   1. ▶ globalSetup runs (this file):
-//      a) Report which utilities are active
+//      a) Print which utilities are active
 //      b) XRAY: Test JIRA connection → Fetch test cases → Create execution
-//      c) Database: Seed test data (if enabled)
-//      d) Save shared state
-//   2. ▶ Each test file runs in parallel
-//   3. ▶ globalTeardown runs (after all tests)
+//      c) Database: Seed test data (if DB_ENABLED=true)
+//      d) Save shared state to xray-state.json
+//   2. ▶ Each test file runs (login.test.ts, api.test.ts)
+//   3. ▶ globalTeardown runs (uploads results + generates HTML report)
 // =============================================================================
 
 // Import Playwright's FullConfig type (the configuration object passed to setup)

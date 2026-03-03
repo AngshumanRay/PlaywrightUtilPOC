@@ -11,13 +11,31 @@
 //   Instead of hardcoding "https://company.atlassian.net" everywhere in code,
 //   we read it from the .env file. This means:
 //     - You can change settings WITHOUT changing code
-//     - Secrets (passwords) stay out of your code files
+//     - Secrets (passwords, tokens) stay out of your code files
+//     - Different environments (dev/staging/prod) can use different values
 //
 // HOW IT WORKS:
-//   1. "dotenv" is a library that reads the .env file
+//   1. "dotenv" is a library that reads the .env file automatically
 //   2. It loads each line into Node.js's process.env object
 //   3. We read process.env here and export a clean "config" object
 //   4. The rest of the project imports "config" from this file
+//
+// CONFIG SECTIONS IN THIS FILE:
+//   \u2022 jira       — JIRA API connection (baseUrl, username, apiToken)
+//   \u2022 xray       — XRAY test management (projectKey, testSetId, sprintNumber)
+//   \u2022 app        — Application under test (baseUrl, environment)
+//   \u2022 database   — Optional DB for seeding/cleanup test data
+//   \u2022 email      — Optional email verification (OTPs, reset links)
+//   \u2022 api        — Optional REST API base URL and auth token
+//   \u2022 execution  — Run modes (headless, parallel, workers, retries)
+//   \u2022 logging    — Log level, file logging, max log age
+//   \u2022 security   — AES-256 encryption key for stored secrets
+//   \u2022 reporting  — HTML report output folder
+//
+// TO ADD A NEW CONFIG SECTION:
+//   1. Add env var(s) to .env and .env.example
+//   2. Add a new block below using getOptionalEnvVar() or getRequiredEnvVar()
+//   3. Export the type at the bottom (TypeScript will pick it up automatically)
 // =============================================================================
 
 // "dotenv/config" automatically reads your .env file when this module is loaded.

@@ -539,26 +539,33 @@ PLAYWRIGHT                         xray-test-fixture.ts
 {
   "executionKey": "PROJ-789",
   "sprintNumber": "5",
-  "runStartedAt": "2026-02-28T10:00:00Z",
+  "runStartedAt": "2026-03-03T10:00:00Z",
   "results": [
     {
       "testCaseKey": "PROJ-101",
+      "testName": "TC01: Valid credentials should log the user in successfully",
       "status": "PASS",
       "durationMs": 3240,
-      "startedAt": "2026-02-28T10:00:05Z",
-      "finishedAt": "2026-02-28T10:00:08Z"
+      "startedAt": "2026-03-03T10:00:05Z",
+      "finishedAt": "2026-03-03T10:00:08Z"
     },
     {
       "testCaseKey": "PROJ-102",
+      "testName": "TC02: Wrong password should show an error message",
       "status": "FAIL",
       "errorMessage": "Expected error message to contain 'Invalid' but found 'Error occurred'",
-      "screenshotPath": "/project/test-results/screenshots/TC02_FAILURE_2026-02-28.png",
-      "durationMs": 4100
+      "screenshotPath": "/project/test-results/screenshots/TC02_FAILURE_2026-03-03.png",
+      "durationMs": 4100,
+      "startedAt": "2026-03-03T10:00:09Z",
+      "finishedAt": "2026-03-03T10:00:13Z"
     },
     {
-      "testCaseKey": "PROJ-103",
+      "testCaseKey": "PROJ-104",
+      "testName": "TC04: GET /posts/1 should return status 200 and valid post data",
       "status": "PASS",
-      "durationMs": 2800
+      "durationMs": 820,
+      "startedAt": "2026-03-03T10:00:14Z",
+      "finishedAt": "2026-03-03T10:00:15Z"
     }
   ]
 }
@@ -613,15 +620,27 @@ Step 6: Delete xray-state.json
 ### What JIRA XRAY Shows After Teardown:
 
 ```
-PROJ-789: "Sprint 5 — Playwright Run [28-Feb-2026]"
+PROJ-789: "Sprint 5 — Playwright Run [03-Mar-2026]"
 Status: DONE
-───────────────────────────────────────────────────
-│ Test Case  │ Summary                │ Result │
-├────────────┼────────────────────────┼────────┤
-│ PROJ-101   │ Valid login test       │ ✅ PASS│
-│ PROJ-102   │ Wrong password test    │ ❌ FAIL│ ← click to see screenshot
-│ PROJ-103   │ Empty fields test      │ ✅ PASS│
-└────────────┴────────────────────────┴────────┘
+─────────────────────────────────────────────────────
+│ Test Case  │ Summary                            │ Type │ Result │
+├────────────┼────────────────────────────────────┼──────┼────────┤
+│ PROJ-101   │ TC01: Valid login test              │ UI   │ ✅ PASS│
+│ PROJ-102   │ TC02: Wrong password test           │ UI   │ ❌ FAIL│ ← click to see screenshot
+│ PROJ-103   │ TC03: Empty fields test             │ UI   │ ✅ PASS│
+│ PROJ-104   │ TC04: GET /posts/1 returns 200      │ API  │ ✅ PASS│
+│ PROJ-105   │ TC05: POST /posts creates resource  │ API  │ ✅ PASS│
+│ PROJ-106   │ TC06: GET /users/1 returns data     │ API  │ ✅ PASS│
+└────────────┴────────────────────────────────────┴──────┴────────┘
+```
+
+After the XRAY upload, the HTML execution report is automatically generated:
+```
+reports/execution-report-2026-03-03.html
+├─ Summary: 6 tests | 5 passed | 1 failed | 3 🖥️ UI | 3 🔌 API | pass rate 83%
+├─ Charts: pass/fail donut, type breakdown, duration bar, a11y issues
+├─ Results table with per-test badges, start time, duration, screenshot
+└─ Step log accordion: expand any test to see every log entry
 ```
 
 ---
@@ -637,12 +656,15 @@ Status: DONE
 | `utils/jira-xray/xray-test-execution.ts` | The "reporter" — creates a new result sheet (Test Execution) in JIRA for this run |
 | `utils/jira-xray/xray-result-updater.ts` | The "grader" — marks each test as PASS or FAIL in JIRA and attaches screenshots |
 | `utils/jira-xray/xray-state.ts` | The "sticky note" — saves the Execution ID and results between steps |
+| `utils/reporting/report-generator.ts` | The "publisher" — builds the HTML report with charts, screenshots, and step logs |
+| `utils/helpers/enhanced-logger.ts` | The "data collector" — gathers structured log/perf/a11y data for the report |
 | `utils/helpers/logger.ts` | The "announcer" — prints formatted, coloured messages in the terminal |
 | `utils/helpers/screenshot.ts` | The "photographer" — captures a browser screenshot when a test fails |
 | `tests/global-setup.ts` | The "pre-flight checklist" — runs once before any test (auth, fetch, create execution) |
-| `tests/global-teardown.ts` | The "cleanup crew" — runs once after all tests (uploads results to JIRA) |
+| `tests/global-teardown.ts` | The "cleanup crew" — runs once after all tests (uploads results, generates report) |
 | `tests/xray-test-fixture.ts` | The "score tracker" — wraps every test to save its result automatically |
-| `tests/login.test.ts` | The actual tests — example tests for the login feature |
+| `tests/login.test.ts` | The UI tests — 3 browser-based login tests |
+| `tests/api.test.ts` | The API tests — 3 REST API tests that don't use a browser |
 | `pages/BasePage.ts` | The "toolbox" — common browser actions (click, type, navigate) every page can use |
 | `pages/LoginPage.ts` | The "login page expert" — knows exactly where the username, password, and Login button are |
 | `playwright.config.ts` | The "control room" — tells Playwright which browser to use, how many tests to run in parallel, etc. |
@@ -795,11 +817,14 @@ When tests run, the terminal shows messages like this. Here's what each means:
 ---
 
 **Q: What is the HTML report and how do I see it?**
-> After running tests, type: `npm run test:report`
-> This opens a browser showing a visual report with:
-> - A list of all tests (pass/fail)
-> - Screenshots attached to failed tests
-> - A "trace viewer" that shows every single browser action step by step
+> After running tests, open the file `reports/execution-report-YYYY-MM-DD.html` in any browser.
+> A new report is generated automatically after every `npm test` run.
+> It shows:
+> - 9 summary cards: total, passed, failed, pass rate, duration, UI count, API count
+> - Charts: pass/fail donut, test type breakdown, duration bar, a11y issues
+> - Results table with 🖥️ UI / 🔌 API badge per test, screenshots for failures (click to zoom)
+> - Step log accordion: expand any test to see every single action step
+> - Full XRAY integration status and links (or demo-mode explanation if JIRA not configured)
 
 ---
 
@@ -833,5 +858,5 @@ When tests run, the terminal shows messages like this. Here's what each means:
 
 ---
 
-*Last updated: 28 February 2026*
-*Framework version: 1.0.0*
+*Last updated: 3 March 2026*
+*Framework version: 1.1.0 — 6 tests (3 UI + 3 API), full HTML report, Slack removed*

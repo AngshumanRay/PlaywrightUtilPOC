@@ -9,6 +9,8 @@
 > You opened the project and thought: *"What does this thing actually do? What's available to me?"*
 >
 > This document answers that question. Every capability is explained like you're 5.
+>
+> 💡 **Want to write a test right now?** Skip to **[WRITE_A_TEST.md](WRITE_A_TEST.md)** — it's a copy-paste guide with zero coding knowledge required.
 
 ---
 
@@ -18,22 +20,25 @@
 2. [All Capabilities at a Glance](#all-capabilities-at-a-glance)
 3. [🌐 Browser Testing (Playwright)](#-browser-testing-playwright)
 4. [📋 JIRA XRAY Integration](#-jira-xray-integration)
-4. [🗃️ Database / Test Data](#️-database--test-data)
-5. [📧 Email Verification](#-email-verification)
-6. [🌐 API Testing Helper](#-api-testing-helper)
+5. [🗃️ Database / Test Data](#️-database--test-data)
+6. [📧 Email Verification](#-email-verification)
+7. [🌐 API Testing Helper](#-api-testing-helper)
+8. [📊 HTML Execution Report](#-html-execution-report)
 9. [📸 Screenshot Capture](#-screenshot-capture)
 10. [📝 Logger](#-logger)
 11. [🍪 Cookie & Popup Handling](#-cookie--popup-handling)
-12. [How to Add Your OWN New Utility](#how-to-add-your-own-new-utility)
-13. [Which File Does What (Cheat Sheet)](#which-file-does-what-cheat-sheet)
-14. [How to Enable/Disable Any Utility](#how-to-enabledisable-any-utility)
+12. [🔒 Security / Encryption](#-security--encryption)
+13. [📑 Excel / Data-Driven Testing](#-excel--data-driven-testing)
+14. [How to Add Your OWN New Utility](#how-to-add-your-own-new-utility)
+15. [Which File Does What (Cheat Sheet)](#which-file-does-what-cheat-sheet)
+16. [How to Enable/Disable Any Utility](#how-to-enabledisable-any-utility)
 
 ---
 
 ## The One-Sentence Summary
 
-This framework opens a web browser, tests your website like a human would,
-and then tells JIRA (and optionally Database, Email) what happened.
+This framework opens a web browser (or calls REST APIs directly), tests your application automatically,
+and then tells JIRA XRAY what happened — while generating a beautiful HTML report with charts, screenshots, and accessibility results.
 
 ---
 
@@ -47,18 +52,21 @@ Here's everything this framework can do, at a glance:
 ├──────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  🟢 ACTIVE (works out of the box):                                       │
-│     ✅ Browser Testing — open Chrome, click, type, verify things         │
-│     ✅ Page Objects    — organized code for each page of your website    │
-│     ✅ Screenshots     — automatic photos of the browser on failure      │
-│     ✅ Logger          — color-coded terminal messages with timestamps   │
-│     ✅ Cookie/Popup    — auto-dismisses cookie banners and browser popups│
-│     ✅ HTML Report     — beautiful visual report after every test run    │
+│     ✅ Browser Testing (UI)  — open Chrome, click, type, verify things   │
+│     ✅ API Testing           — call REST endpoints, check responses      │
+│     ✅ Page Objects          — organized code for each page of your app  │
+│     ✅ HTML Execution Report — charts, screenshots, a11y, step logs      │
+│     ✅ Screenshots           — automatic photos of the browser on failure │
+│     ✅ Logger                — color-coded terminal messages + log files  │
+│     ✅ Cookie/Popup handling — auto-dismisses banners and JS popups      │
+│     ✅ Accessibility (a11y)  — WCAG scan run automatically after each UI test│
 │                                                                          │
 │  🟡 READY (just add credentials in .env to activate):                    │
 │     📋 JIRA XRAY      — fetch test cases, create executions, push results│
-│     🗃️ Database        — seed test data before, clean up after           │
+│     🗃️  Database        — seed test data before, clean up after          │
 │     📧 Email           — check test mailbox for OTPs, reset links, etc. │
-│     🌐 API Helper      — call your backend APIs from inside tests        │
+│     🔒 Encryption      — AES-256 password protection for stored secrets  │
+│     📑 Excel           — data-driven testing from .xlsx spreadsheets     │
 │                                                                          │
 │  ⚪ NOT configured utilities are SKIPPED automatically.                  │
 │     Nothing crashes. You see a clear message in the terminal.            │
@@ -358,6 +366,46 @@ If you leave `API_BASE_URL` blank, it defaults to `BASE_URL` (your website addre
 
 ---
 
+## 📊 HTML Execution Report
+
+### What is it?
+After every test run, the framework automatically generates a single **HTML file** you can open
+in any browser. It shows the full picture of what happened — charts, test results, screenshots,
+step logs, and more. No server needed, no login required — just open the file.
+
+### What does the report contain?
+
+| Section | What You'll See |
+|---------|----------------|
+| **Header** | Environment (dev/staging/prod), sprint number, total duration, run date |
+| **Summary Cards** | Total tests, passed, failed, pass rate %, suite duration, UI count, API count |
+| **Charts** | Pass/Fail donut, test type breakdown, duration bar chart, a11y issues |
+| **Results Table** | Every test with: full name, 🖥️ UI / 🔌 API badge, PASS/FAIL badge, start time, duration |
+| **Screenshots** | Failure screenshots shown inline — click to zoom |
+| **Step Log Accordion** | Expand any test to see every log message from that test |
+| **Accessibility Table** | All a11y violations found across tests (impact, element, message) |
+| **Performance Table** | Page load and navigation timing per test |
+| **XRAY Section** | Execution key, JIRA link, or demo-mode explanation if JIRA not configured |
+
+### Where is the report saved?
+```
+reports/execution-report-YYYY-MM-DD.html
+```
+A new file is created for each day. Old reports are never deleted automatically.
+
+### How to open it?
+Just open the file in any browser — Chrome, Firefox, Safari, Edge.
+Or right-click the file in VS Code → **Open with Live Server**.
+
+### Do I need to do anything?
+No. The report is generated automatically at the end of every `npm test` run.
+
+### Where is the code?
+- `utils/reporting/report-generator.ts`
+- `utils/helpers/enhanced-logger.ts` — collects structured data during the run
+
+---
+
 ## 📸 Screenshot Capture
 
 ### What is it?
@@ -450,6 +498,80 @@ If no cookie banner is found, it silently moves on. No error, no delay.
 
 ### Do I need to configure anything?
 No. This is always active automatically.
+
+---
+
+## 🔒 Security / Encryption
+
+### What is it?
+When you store passwords or API tokens, they are normally visible as plain text in your `.env` file.
+The encryption utility lets you store them as scrambled, unreadable text — so even if someone
+sees your file, they can't read the secrets.
+
+### How to enable it?
+
+```env
+# Set a secret key (at least 16 characters, keep this very private!)
+ENCRYPTION_KEY=my-super-secret-key-32chars
+```
+
+### How to use it in code?
+
+```typescript
+import { encrypt, decrypt, hashPassword } from '../utils';
+
+// Encrypt a value to store it safely
+const encryptedPassword = encrypt('my-plain-password');
+// → "enc:a1b2c3d4..."
+
+// Decrypt when you need to use it
+const plain = decrypt(encryptedPassword);
+// → "my-plain-password"
+
+// Hash a password (one-way — cannot be reversed)
+const hashed = hashPassword('my-password');
+```
+
+### Where is the code?
+- `utils/security/crypto-helper.ts`
+
+---
+
+## 📑 Excel / Data-Driven Testing
+
+### What is it?
+Sometimes you want to run the same test with MANY different sets of data.
+For example, test login with 50 different username/password combinations.
+Instead of writing 50 separate tests, you put the data in an Excel spreadsheet
+and the framework reads it and runs the test once per row.
+
+### What can it do?
+
+| Action | Description |
+|--------|------------|
+| Read a sheet | Get all rows from a specific sheet as an array of objects |
+| Read all sheets | Get every sheet from the workbook at once |
+| Get sheet names | List all the tab names in an Excel file |
+| Write results | Write pass/fail results back into the Excel file |
+| Data Pool | Randomly pick test data rows to avoid conflicts in parallel runs |
+
+### How to use it in code?
+
+```typescript
+import { readExcelSheet, DataPool } from '../utils';
+
+// Read all rows from the "LoginData" tab of a spreadsheet
+const rows = readExcelSheet('test-data/users.xlsx', 'LoginData');
+// rows = [ { username: 'alice', password: 'pass1' }, { username: 'bob', password: 'pass2' }, ... ]
+
+// Data Pool — picks a unique row per parallel worker (no conflicts)
+const pool = new DataPool(rows);
+const myRow = pool.acquire();
+```
+
+### Where is the code?
+- `utils/excel/excel-reader.ts`
+- `utils/excel/data-pool.ts`
 
 ---
 
@@ -546,16 +668,23 @@ The framework will show your tool in the Utility Status Dashboard:
 | **`.env`** | Your private settings (URLs, passwords, API keys) |
 | **`config/environment.ts`** | Reads `.env` and makes it available as `config.xxx` |
 | **`tests/global-setup.ts`** | Runs ONCE before tests — XRAY setup, DB seed, utility checks |
-| **`tests/global-teardown.ts`** | Runs ONCE after tests — XRAY upload, DB cleanup |
-| **`tests/xray-test-fixture.ts`** | Wraps every test with XRAY reporting + popup handling |
-| **`tests/login.test.ts`** | The actual test cases (your click/type/verify steps) |
+| **`tests/global-teardown.ts`** | Runs ONCE after all tests — XRAY upload, HTML report, DB cleanup |
+| **`tests/xray-test-fixture.ts`** | Wraps every test with XRAY reporting + a11y scan + popup handling |
+| **`tests/login.test.ts`** | UI test cases — 3 login tests (TC01–TC03) |
+| **`tests/api.test.ts`** | API test cases — 3 REST API tests (TC04–TC06) |
 | **`pages/BasePage.ts`** | Reusable browser actions — click, fill, navigate, wait |
 | **`pages/LoginPage.ts`** | Login page specific actions — enter username, click login |
 | **`utils/jira-xray/*.ts`** | Everything JIRA/XRAY — auth, fetch tests, create execution, upload results |
+| **`utils/reporting/report-generator.ts`** | Builds the full HTML execution report with charts and screenshots |
 | **`utils/database/test-data-manager.ts`** | Seeds and cleans up test data in your database |
+| **`utils/database/db-connection.ts`** | Secure database connection wrapper |
 | **`utils/email/email-verifier.ts`** | Waits for emails, extracts OTP codes and links |
 | **`utils/api/api-helper.ts`** | Makes GET/POST/PUT/DELETE API calls |
+| **`utils/excel/excel-reader.ts`** | Reads test data rows from Excel (.xlsx) spreadsheets |
+| **`utils/excel/data-pool.ts`** | Manages data rows for parallel test execution (no conflicts) |
+| **`utils/security/crypto-helper.ts`** | AES-256 encrypt/decrypt passwords and stored secrets |
 | **`utils/helpers/logger.ts`** | Color-coded terminal logging |
+| **`utils/helpers/enhanced-logger.ts`** | Structured data collector for the HTML report (logs, perf, a11y) |
 | **`utils/helpers/screenshot.ts`** | Captures browser screenshots |
 | **`utils/index.ts`** | Barrel file — import anything from one place |
 | **`playwright.config.ts`** | Playwright settings (browsers, timeouts, retries) |
@@ -568,13 +697,18 @@ Every utility is controlled by your `.env` file. Here's the master switch for ea
 
 | Utility | How to Enable | How to Disable |
 |---------|--------------|----------------|
-| **Playwright** | Always on (it's the core) | Can't disable |
-| **JIRA XRAY** | Set real values for `JIRA_BASE_URL`, `JIRA_USERNAME`, `JIRA_API_TOKEN` | Leave the placeholder values |
+| **Playwright (UI tests)** | Always on (it's the core) | Can't disable |
+| **API Testing** | Always on (no config needed) | Can't disable |
+| **HTML Report** | Always on — generated after every run | Can't disable |
+| **JIRA XRAY** | Set real values for `JIRA_BASE_URL`, `JIRA_USERNAME`, `JIRA_API_TOKEN` | Leave the placeholder values — tests still run |
 | **Database** | Set `DB_ENABLED=true` + fill connection details | Set `DB_ENABLED=false` |
 | **Email** | Set `EMAIL_ENABLED=true` + fill API key | Set `EMAIL_ENABLED=false` |
-| **API Helper** | Set `API_BASE_URL` (optional — defaults to `BASE_URL`) | Leave empty |
+| **API Helper base URL** | Set `API_BASE_URL` (optional — defaults to `BASE_URL`) | Leave empty |
+| **Encryption** | Set `ENCRYPTION_KEY` (min 16 chars) | Leave empty — passwords stay as plain text |
+| **Excel** | Import `readExcelSheet` in your test — no `.env` needed | Just don't use it |
 | **Screenshots** | Always on automatically | Can't disable |
 | **Logger** | Always on automatically | Can't disable |
+| **Accessibility scan** | Always on automatically after every UI test | Can't disable |
 | **Cookie handling** | Always on automatically | Can't disable |
 
 ### The Golden Rule
@@ -585,5 +719,6 @@ Every utility is controlled by your `.env` file. Here's the master switch for ea
 
 ---
 
-*Last updated: 1 March 2026*
+*Last updated: 3 March 2026*
 *Framework: Playwright + JIRA XRAY + Multi-Utility Architecture*
+*Tests: 3 UI (login) + 3 API (REST) = 6 total*

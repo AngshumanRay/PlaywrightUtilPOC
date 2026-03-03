@@ -8,17 +8,21 @@
 //   The counterpart to globalSetup. It runs after every single test is done.
 //   This is the perfect place to:
 //     - Upload all collected test results to XRAY
+//     - Generate the HTML execution report
 //     - Clean up test data from the database
-//     - Generate a final report
 //
 // UTILITIES HANDLED HERE (each one skips gracefully if not configured):
-//   🔹 XRAY     — Upload PASS/FAIL results + screenshots to JIRA
-//   🔹 Database — Clean up test data seeded during setup
+//   🔹 XRAY     — Upload PASS/FAIL results + full test names + screenshots to JIRA
+//   🔹 Report   — Generate the HTML execution report (always runs, XRAY optional)
+//   🔹 Database — Clean up test data seeded during global-setup
 //
 // EXECUTION ORDER:
-//   1. Upload results to XRAY (if configured)
-//   2. Clean up database test data (if configured)
-//   3. Clean up state file
+//   1. Read xray-state.json (results saved by xray-test-fixture.ts during tests)
+//   2. Upload results to XRAY (if execution key is configured)
+//   3. Fetch final execution status from XRAY (to confirm upload)
+//   4. Clear xray-state.json (so next run starts fresh)
+//   5. Generate HTML report (reports/execution-report-YYYY-MM-DD.html)
+//   6. Clean up database test data (if DB_ENABLED=true)
 // =============================================================================
 
 // Import Playwright's FullConfig type
