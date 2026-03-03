@@ -5,6 +5,8 @@
   "scripts": {
     "test": "npx playwright test",
     "test:login": "npx playwright test tests/login.test.ts",
+    "test:api": "npx playwright test tests/api.test.ts",
+    "test:all": "npx playwright test",
 
     "test:headed": "RUN_HEADLESS=false npx playwright test",
     "test:headless": "RUN_HEADLESS=true npx playwright test",
