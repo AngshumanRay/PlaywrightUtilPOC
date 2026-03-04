@@ -1,76 +1,69 @@
-# =============================================================================
-# Playwright + JIRA XRAY Automated Testing Framework
+# Playwright + JIRA XRAY — Automated Testing Framework
 # =============================================================================
 
-> **Beginner-friendly** automated test framework using Playwright (browser automation)
-> integrated with JIRA XRAY (test management). Even with zero coding experience,
-> this guide will walk you through everything step by step.
+> **Beginner-friendly** automated test framework that runs browser (UI) and API tests,
+> then reports results directly into JIRA XRAY — with a beautiful HTML report.
+> No coding experience needed to run it; this guide walks you through every step.
 
 ---
 
-## 📖 Documentation Guide
+## ⚡ Quick Start (Already Set Up? Run Tests in 10 Seconds)
 
-| Document | What's Inside | Who Should Read |
-|----------|---------------|-----------------|
-| **[README.md](README.md)** (this file) | Setup, installation, run commands | Everyone — start here |
-| **[WRITE_A_TEST.md](WRITE_A_TEST.md)** | Copy-paste guide to write your first test | **Non-technical users — read this next** |
-| **[CAPABILITIES.md](CAPABILITIES.md)** | All framework features explained in plain English | New team members / beginners |
-| **[WALKTHROUGH.md](WALKTHROUGH.md)** | Step-by-step XRAY flow with diagrams | Anyone learning the XRAY integration |
-| **[AI_ASSISTED_TESTING.md](AI_ASSISTED_TESTING.md)** | Using Playwright MCP + Claude/OpenAI to test with AI | **QA engineers wanting AI-powered testing** |
+```bash
+npm test                       # Run all 6 tests (3 UI + 3 API) → results go to JIRA + HTML report
+open reports/execution-report-*.html   # View the visual report in your browser
+```
+
+> First time here? Keep reading from [Prerequisites](#prerequisites) onward.
+
+---
+
+## 📖 Documentation Guide — Where to Go Next
+
+| Document | What You'll Learn | Best For |
+|----------|-------------------|----------|
+| **[README.md](README.md)** (you're here) | Setup, install, run commands, troubleshooting | **Everyone — start here** |
+| **[WRITE_A_TEST.md](WRITE_A_TEST.md)** | Copy-paste guide to write your first test | **Non-technical users** |
+| **[CAPABILITIES.md](CAPABILITIES.md)** | Every feature explained in plain English | **New team members exploring the framework** |
+| **[WALKTHROUGH.md](WALKTHROUGH.md)** | End-to-end XRAY flow with diagrams | **Anyone learning how JIRA reporting works** |
 | **[docs/RUN_REPORT_*.md](docs/)** | Auto-generated run reports | Anyone reviewing past test runs |
 
 > 💡 **Not a developer?** Read this README for setup, then go straight to **[WRITE_A_TEST.md](WRITE_A_TEST.md)** — it explains how to write a test with zero coding knowledge.
 > 
-> 💡 **Developer?** After setup, read `CAPABILITIES.md` to see everything the framework can do.
-> 
-> 🤖 **Want AI to help you test?** Read **[AI_ASSISTED_TESTING.md](AI_ASSISTED_TESTING.md)** — it shows how to use Claude Opus 4.6, OpenAI Codex, and Playwright MCP to explore, validate, debug, and generate tests.
+> 💡 **Developer?** After setup, read **[CAPABILITIES.md](CAPABILITIES.md)** to see everything the framework can do.
 
 ---
 
 ## 📚 Table of Contents
 
-1. [What Is This Project?](#what-is-this-project)
-2. [Project Structure Explained](#project-structure-explained)
-3. [Prerequisites](#prerequisites)
-4. [First-Time Setup](#first-time-setup)
-5. [Configure Your Environment](#configure-your-environment)
-6. [How to Run Tests](#how-to-run-tests)
-7. [Understanding the Test Results](#understanding-the-test-results)
-8. [How the XRAY Integration Works](#how-the-xray-integration-works)
-9. [Adding New Tests](#adding-new-tests)
-10. [Adding New Page Objects](#adding-new-page-objects)
-11. [Troubleshooting](#troubleshooting)
-12. [Glossary (Key Terms)](#glossary)
+1. [Quick Start](#-quick-start-already-set-up-run-tests-in-10-seconds)
+2. [What Is This Project?](#what-is-this-project)
+3. [Project Structure Explained](#project-structure-explained)
+4. [Prerequisites](#prerequisites)
+5. [First-Time Setup](#first-time-setup)
+6. [Configure Your Environment](#configure-your-environment)
+7. [How to Run Tests](#how-to-run-tests)
+8. [Understanding the Test Results](#understanding-the-test-results)
+9. [How the XRAY Integration Works](#how-the-xray-integration-works)
+10. [Adding New Tests](#adding-new-tests)
+11. [Adding New Page Objects](#adding-new-page-objects)
+12. [Troubleshooting](#troubleshooting)
+13. [Glossary (Key Terms)](#glossary)
 
 ---
 
 ## What Is This Project?
 
-This project does THREE things automatically:
+A one-command test framework that does three things automatically:
 
-```
-BEFORE TESTS:
-  1. Connects to JIRA (your project management tool)
-  2. Fetches test cases from an XRAY Test Set (your list of tests to run)
-  3. Creates a Test Execution in JIRA (a "results container" for this run)
-  4. Seeds any required test data in the database (if configured)
+| Phase | What Happens |
+|-------|-------------|
+| **Before tests** | Connects to JIRA → fetches test cases from XRAY → creates a Test Execution → seeds database (if configured) |
+| **During tests** | Opens Chrome for UI tests, calls REST APIs for API tests, checks assertions, captures failure screenshots |
+| **After tests** | Uploads PASS/FAIL to JIRA XRAY → attaches screenshots → generates HTML report → cleans up test data |
 
-DURING TESTS:
-  5. Opens a web browser (Chrome) for UI tests
-  6. Calls backend REST APIs directly for API tests
-  7. Performs actions on your web app (clicking, typing, navigating)
-  8. Checks if things work correctly (assertions)
-  9. Captures screenshots automatically on failure
-
-AFTER TESTS:
-  10. Uploads PASS/FAIL results to JIRA XRAY (so your team can see results)
-  11. Attaches failure screenshots to failed test cases in JIRA
-  12. Generates a full HTML report with charts, step logs, and accessibility results
-  13. Cleans up any test data inserted into the database (if configured)
-```
-
-> This framework supports **both UI tests** (browser automation) and **API tests**
-> (direct backend calls). Both types report to JIRA XRAY and appear in the HTML report.
+> **Both UI tests** (browser automation) and **API tests** (direct backend calls) are supported.
+> Both types report to JIRA XRAY and appear in the HTML report.
 
 ---
 
@@ -583,7 +576,7 @@ npm run test:debug
 
 ---
 
-*Last updated: 3 March 2026*
+*Last updated: 4 March 2026*
 *Framework: Playwright + JIRA XRAY + Multi-Utility Architecture*
 *Tests: 3 UI (login) + 3 API (REST) = 6 total*
-*XRAY: Test Set = manual, Test Execution onward = automated by Playwright*
+*XRAY: Test Set = manual setup, Test Execution onward = fully automated*

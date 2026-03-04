@@ -238,49 +238,175 @@ function buildHtml(input: ReportInput): string {
   const warnLogCount    = logEntries.filter(e => e.level === 'warn').length;
 
   // --------------------------------------------------------------------------
-  // 3D Force Graph data — build nodes and links
+  // 3D Force Graph data — Meaningful Relationship Model
   // --------------------------------------------------------------------------
-  const graphNodes: Array<{id: string; group: string; label: string; val: number; color: string}> = [];
-  const graphLinks: Array<{source: string; target: string; color: string}> = [];
+  // GRAPH PHILOSOPHY:
+  //   This graph answers: "How does each test connect to quality signals?"
+  //
+  //   NODE TYPES (5 layers):
+  //     🔵 Sprint/Run    — The root. Represents this entire test execution.
+  //     🟦 Module         — "UI Tests" or "API Tests". Groups by test type.
+  //     🟢/🔴 Test Case  — Individual JIRA XRAY test cases (PROJ-101, etc.)
+  //     🟡 A11y Violation — Each unique WCAG violation found (only for UI tests).
+  //     🟣 Page/Endpoint  — The target page or API endpoint being tested.
+  //
+  //   EDGE LABELS (what the lines MEAN):
+  //     Run ──[3 UI, 3 API]──→ Module      = "Run triggered these modules"
+  //     Module ──[PASS/FAIL]──→ Test        = "Module contains this test"
+  //     Test ──[1.2s load]──→ Page          = "Test hit this page, took 1.2s"
+  //     Test ──[2 violations]──→ Violation  = "Test found 2 WCAG issues here"
+  //     Test ──[21 reqs, 1.8MB]──→ Network  = "Test made 21 requests"
+  //
+  //   WHY THIS MATTERS:
+  //     - Immediately see which tests are slow (thick/red edges)
+  //     - See which pages have accessibility problems (connected to yellow nodes)
+  //     - See the dependency tree: Run → Module → Test → Page → Violations
+  //     - Failed tests glow red, so you instantly spot problems
+  // --------------------------------------------------------------------------
 
-  // Central "Test Run" node
-  graphNodes.push({ id: 'RUN', group: 'run', label: `Run ${input.runDate}`, val: 16, color: '#60a5fa' });
+  type GraphNode = {id: string; group: string; label: string; val: number; color: string; desc?: string};
+  type GraphLink = {source: string; target: string; label: string; color: string; width: number};
 
-  // Module nodes
-  graphNodes.push({ id: 'UI_MODULE', group: 'module', label: 'UI Tests', val: 10, color: '#38bdf8' });
-  graphNodes.push({ id: 'API_MODULE', group: 'module', label: 'API Tests', val: 10, color: '#fb923c' });
-  graphNodes.push({ id: 'A11Y', group: 'quality', label: `A11y (${totalA11yViolations})`, val: 8, color: totalA11yViolations > 0 ? '#f59e0b' : '#22c55e' });
-  graphNodes.push({ id: 'PERF', group: 'quality', label: `Perf (${perfData.length})`, val: 8, color: '#a78bfa' });
+  const graphNodes: GraphNode[] = [];
+  const graphLinks: GraphLink[] = [];
 
-  graphLinks.push({ source: 'RUN', target: 'UI_MODULE', color: '#334155' });
-  graphLinks.push({ source: 'RUN', target: 'API_MODULE', color: '#334155' });
-  graphLinks.push({ source: 'RUN', target: 'A11Y', color: '#334155' });
-  graphLinks.push({ source: 'RUN', target: 'PERF', color: '#334155' });
+  // ─── Layer 0: Sprint/Run (root) ───
+  graphNodes.push({
+    id: 'RUN', group: 'run',
+    label: `Sprint ${sprintDisplay}\\n${input.runDate}`,
+    val: 22, color: '#6366f1',
+    desc: `Test execution on ${input.runDate} — ${total} tests, ${passRate}% pass rate`,
+  });
 
-  // Test nodes
+  // ─── Layer 1: Module nodes ───
+  if (uiCount > 0) {
+    graphNodes.push({
+      id: 'UI_MODULE', group: 'module',
+      label: `🖥️ UI Tests (${uiCount})`,
+      val: 14, color: '#22d3ee',
+      desc: `${uiCount} browser-based UI tests with page interactions`,
+    });
+    const uiPassed = results.filter(r => getTestType(r) === 'UI' && r.status === 'PASS').length;
+    graphLinks.push({
+      source: 'RUN', target: 'UI_MODULE',
+      label: `${uiPassed}/${uiCount} passed`,
+      color: uiPassed === uiCount ? '#22c55e' : '#f59e0b',
+      width: 3,
+    });
+  }
+  if (apiCount > 0) {
+    graphNodes.push({
+      id: 'API_MODULE', group: 'module',
+      label: `🔌 API Tests (${apiCount})`,
+      val: 14, color: '#fb923c',
+      desc: `${apiCount} REST API tests (no browser, direct HTTP)`,
+    });
+    const apiPassed = results.filter(r => getTestType(r) === 'API' && r.status === 'PASS').length;
+    graphLinks.push({
+      source: 'RUN', target: 'API_MODULE',
+      label: `${apiPassed}/${apiCount} passed`,
+      color: apiPassed === apiCount ? '#22c55e' : '#f59e0b',
+      width: 3,
+    });
+  }
+
+  // ─── Layer 2: Test Case nodes + edges to modules ───
   for (const r of results) {
     const testType = getTestType(r);
+    const perf = perfData.find(p => p.testName?.includes(r.testCaseKey));
+    const a11yViolations = a11yData[r.testCaseKey] ?? [];
     const statusColor = r.status === 'PASS' ? '#22c55e' : r.status === 'FAIL' ? '#ef4444' : '#f59e0b';
+    const durLabel = perf?.durationMs ? (perf.durationMs / 1000).toFixed(1) + 's' : (r.durationMs ? (r.durationMs / 1000).toFixed(1) + 's' : '');
+
     graphNodes.push({
       id: r.testCaseKey,
-      group: testType.toLowerCase(),
-      label: `${r.testCaseKey}\\n${r.status}`,
-      val: 6,
+      group: 'test',
+      label: `${r.testCaseKey}\\n${r.status}${durLabel ? ' · ' + durLabel : ''}`,
+      val: 9,
       color: statusColor,
+      desc: r.testName ?? r.testCaseKey,
     });
+
+    // Module → Test (labeled with status + duration)
     graphLinks.push({
       source: testType === 'UI' ? 'UI_MODULE' : 'API_MODULE',
       target: r.testCaseKey,
-      color: statusColor + '80',
+      label: r.status + (durLabel ? ' · ' + durLabel : ''),
+      color: statusColor,
+      width: r.status === 'FAIL' ? 3 : 1.5,
     });
 
-    // Link test to A11y if it has violations
-    if ((a11yData[r.testCaseKey] ?? []).length > 0) {
-      graphLinks.push({ source: r.testCaseKey, target: 'A11Y', color: '#f59e0b40' });
+    // ─── Layer 3: Page / Endpoint nodes (unique per URL pattern) ───
+    if (testType === 'UI' && perf) {
+      const pageId = 'PAGE_' + r.testCaseKey;
+      const loadLabel = perf.pageLoadMs ? (perf.pageLoadMs / 1000).toFixed(2) + 's load' : '';
+      const fcpLabel  = perf.fcpMs ? (perf.fcpMs / 1000).toFixed(2) + 's FCP' : '';
+      const reqLabel  = perf.requestCount ? perf.requestCount + ' reqs' : '';
+      const kbLabel   = perf.transferBytes ? (perf.transferBytes / 1024).toFixed(0) + ' KB' : '';
+      const metricsArr = [loadLabel, fcpLabel].filter(Boolean);
+      const networkArr = [reqLabel, kbLabel].filter(Boolean);
+
+      graphNodes.push({
+        id: pageId, group: 'page',
+        label: `📄 Page\\n${metricsArr.join(' · ') || 'measured'}`,
+        val: 6, color: '#818cf8',
+        desc: `Target page for ${r.testCaseKey}: ${metricsArr.concat(networkArr).join(', ') || 'metrics collected'}`,
+      });
+
+      graphLinks.push({
+        source: r.testCaseKey, target: pageId,
+        label: networkArr.join(', ') || 'loaded',
+        color: '#818cf8',
+        width: 1,
+      });
+
+      // ─── Layer 4: A11y Violation nodes (only for UI tests with violations) ───
+      if (a11yViolations.length > 0) {
+        // Group violations by impact for cleaner graph
+        const bySeverity: Record<string, typeof a11yViolations> = {};
+        for (const v of a11yViolations) {
+          const key = v.impact;
+          if (!bySeverity[key]) bySeverity[key] = [];
+          bySeverity[key].push(v);
+        }
+        for (const [severity, vList] of Object.entries(bySeverity)) {
+          const vNodeId = `A11Y_${r.testCaseKey}_${severity}`;
+          const sevColor = severity === 'critical' ? '#ef4444' : severity === 'serious' ? '#f97316' : severity === 'moderate' ? '#f59e0b' : '#60a5fa';
+          graphNodes.push({
+            id: vNodeId, group: 'a11y',
+            label: `⚠️ ${severity.toUpperCase()}\\n${vList.length} violation${vList.length > 1 ? 's' : ''}`,
+            val: 4 + vList.length, color: sevColor,
+            desc: vList.map(v => v.id + ': ' + v.description).join('; '),
+          });
+          graphLinks.push({
+            source: pageId, target: vNodeId,
+            label: `${vList.length} ${severity}`,
+            color: sevColor,
+            width: severity === 'critical' || severity === 'serious' ? 2.5 : 1,
+          });
+        }
+      }
     }
-    // Link test to Perf if we have perf data
-    if (perfData.find(p => p.testName?.includes(r.testCaseKey))) {
-      graphLinks.push({ source: r.testCaseKey, target: 'PERF', color: '#a78bfa40' });
+
+    // API tests: show request metrics directly
+    if (testType === 'API' && perf) {
+      const networkId = 'NET_' + r.testCaseKey;
+      const reqLabel = perf.requestCount ? perf.requestCount + ' reqs' : '';
+      const kbLabel  = perf.transferBytes ? (perf.transferBytes / 1024).toFixed(0) + ' KB' : '';
+      const info = [reqLabel, kbLabel].filter(Boolean).join(', ') || 'measured';
+
+      graphNodes.push({
+        id: networkId, group: 'network',
+        label: `🌐 Network\\n${info}`,
+        val: 5, color: '#38bdf8',
+        desc: `API network metrics: ${info}`,
+      });
+      graphLinks.push({
+        source: r.testCaseKey, target: networkId,
+        label: info,
+        color: '#38bdf8',
+        width: 1,
+      });
     }
   }
 
@@ -665,21 +791,62 @@ function buildHtml(input: ReportInput): string {
 <!-- TAB: 3D FORCE GRAPH (Neo4j-style)                             -->
 <!-- =========================================================== -->
 <div class="tab-content active" id="tab-3d">
-<div class="section-title">🌐 3D Test Execution Graph <span class="count-chip">Interactive</span></div>
+<div class="section-title">🌐 Test Execution Dependency Graph <span class="count-chip">Interactive 3D</span></div>
+
+<!-- WHAT THIS GRAPH REPRESENTS — Explainer Panel -->
+<div class="status-card status-info" style="margin-bottom:20px;border-left-color:var(--accent-cyan)">
+  <h4 style="color:var(--accent-cyan)">📖 What This Graph Represents</h4>
+  <p style="margin-top:8px;line-height:1.8">
+    This <strong>interactive 3D force-directed graph</strong> maps the entire test execution as a <strong>dependency tree</strong> — showing how each test connects to the system under test and what quality signals it produced. Each node is an entity, each edge is a measured relationship.
+  </p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
+    <div>
+      <p style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:6px">🔷 NODE TYPES (What)</p>
+      <ul style="margin-left:16px;font-size:12px;line-height:2;color:var(--text-secondary)">
+        <li><span style="color:#6366f1">●</span> <strong>Sprint/Run</strong> — Root node. This test execution session.</li>
+        <li><span style="color:#22d3ee">●</span> <strong>UI Module</strong> — Groups browser-based tests that render pages.</li>
+        <li><span style="color:#fb923c">●</span> <strong>API Module</strong> — Groups REST API tests (no browser).</li>
+        <li><span style="color:#22c55e">●</span>/<span style="color:#ef4444">●</span> <strong>Test Case</strong> — Individual JIRA XRAY test (green=pass, red=fail).</li>
+        <li><span style="color:#818cf8">●</span> <strong>Page</strong> — The actual web page tested, with load time & FCP.</li>
+        <li><span style="color:#38bdf8">●</span> <strong>Network</strong> — API endpoint metrics (request count, data transfer).</li>
+        <li><span style="color:#f59e0b">●</span>/<span style="color:#ef4444">●</span> <strong>A11y Violation</strong> — WCAG accessibility issue found on a page.</li>
+      </ul>
+    </div>
+    <div>
+      <p style="font-size:12px;font-weight:700;color:var(--text-primary);margin-bottom:6px">🔗 EDGE LABELS (Relationships)</p>
+      <ul style="margin-left:16px;font-size:12px;line-height:2;color:var(--text-secondary)">
+        <li><strong>Run → Module</strong>: "3/3 passed" — pass count out of total.</li>
+        <li><strong>Module → Test</strong>: "PASS · 12.1s" — result + duration.</li>
+        <li><strong>Test → Page</strong>: "21 reqs, 2108 KB" — network footprint.</li>
+        <li><strong>Page → Violation</strong>: "1 serious" — WCAG violations found.</li>
+        <li><strong>Test → Network</strong>: "5 reqs, 84 KB" — API call metrics.</li>
+        <li><em style="color:var(--accent-amber)">Thick red edges</em> = failed tests (investigate!).</li>
+        <li><em style="color:var(--accent-amber)">Thick yellow edges</em> = critical a11y violations.</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:14px;font-size:12px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:10px">
+    💡 <strong>Why this matters:</strong> Instantly see which tests are slow (long duration labels), which pages have WCAG violations (yellow/red nodes branching off pages), and which API calls transfer the most data. A healthy graph has all green test nodes and no violation branches.
+  </p>
+</div>
+
 <div class="graph-container">
   <div class="graph-overlay">
-    <h4>🔮 Neo4j-Style Force Graph</h4>
-    <p>Drag to rotate • Scroll to zoom • Click nodes for details</p>
+    <h4>🔮 Force-Directed Dependency Graph</h4>
+    <p>Drag to rotate • Scroll to zoom • Click nodes to focus</p>
+    <p style="margin-top:4px;font-size:10px;color:var(--accent-amber)">Edges show real metrics — hover labels for details</p>
   </div>
-  <div id="3d-graph" style="height:520px;width:100%;"></div>
+  <div id="3d-graph" style="height:560px;width:100%;"></div>
   <div class="graph-legend">
-    <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#6366f1"></div> Test Run</div>
+    <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#6366f1"></div> Sprint/Run</div>
     <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#22d3ee"></div> UI Module</div>
     <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#fb923c"></div> API Module</div>
-    <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#22c55e"></div> Passed</div>
-    <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#ef4444"></div> Failed</div>
-    <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#a78bfa"></div> Performance</div>
-    <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#f59e0b"></div> Accessibility</div>
+    <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#22c55e"></div> Test Passed</div>
+    <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#ef4444"></div> Test Failed</div>
+    <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#818cf8"></div> Page / Endpoint</div>
+    <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#38bdf8"></div> Network Metrics</div>
+    <div class="graph-legend-item"><div class="graph-legend-dot" style="background:#f59e0b"></div> A11y Violation</div>
+    <div class="graph-legend-item" style="margin-left:auto;color:var(--text-muted);font-style:italic">Edge labels = measured data</div>
   </div>
 </div>
 </div>
@@ -1091,7 +1258,7 @@ new Chart(document.getElementById('histChart'), {
   }
 });
 
-// ---- 3D FORCE GRAPH ----
+// ---- 3D FORCE GRAPH (with labeled edges) ----
 (function init3DGraph() {
   const graphData = {
     nodes: ${JSON.stringify(graphNodes)},
@@ -1106,43 +1273,92 @@ new Chart(document.getElementById('histChart'), {
     .backgroundColor('#0a0e1a00')
     .nodeVal('val')
     .nodeColor('color')
-    .nodeOpacity(0.9)
+    .nodeOpacity(0.92)
     .linkColor('color')
-    .linkWidth(1.5)
-    .linkOpacity(0.6)
+    .linkWidth(link => link.width || 1)
+    .linkOpacity(0.7)
+    // ── Node rendering: labeled spheres ──
     .nodeThreeObject(node => {
-      const sprite = new SpriteText(node.label);
-      sprite.color = node.color;
-      sprite.textHeight = node.group === 'run' ? 5 : node.group === 'module' || node.group === 'quality' ? 4 : 3;
-      sprite.fontFace = 'Inter, sans-serif';
-      sprite.fontWeight = 'bold';
-      sprite.backgroundColor = 'rgba(10, 14, 26, 0.7)';
-      sprite.padding = 3;
-      sprite.borderRadius = 4;
-      return sprite;
+      const group = new THREE.Group();
+      // Glowing sphere
+      const geometry = new THREE.SphereGeometry(node.val * 0.6, 16, 16);
+      const material = new THREE.MeshLambertMaterial({
+        color: node.color,
+        transparent: true,
+        opacity: 0.85,
+        emissive: node.color,
+        emissiveIntensity: 0.3,
+      });
+      const sphere = new THREE.Mesh(geometry, material);
+      group.add(sphere);
+      // Label above the sphere
+      const label = new SpriteText(node.label);
+      label.color = node.color;
+      label.textHeight = node.group === 'run' ? 4.5 : node.group === 'module' ? 3.5 : node.group === 'test' ? 3 : 2.5;
+      label.fontFace = 'Inter, -apple-system, sans-serif';
+      label.fontWeight = 'bold';
+      label.backgroundColor = 'rgba(10, 14, 26, 0.75)';
+      label.padding = 2.5;
+      label.borderRadius = 3;
+      label.position.y = node.val * 0.8 + 4;
+      group.add(label);
+      return group;
     })
     .nodeThreeObjectExtend(false)
-    .d3AlphaDecay(0.04)
-    .d3VelocityDecay(0.3)
-    .warmupTicks(80)
-    .cooldownTicks(120)
+    // ── Edge rendering: labeled relationship lines ──
+    .linkThreeObjectExtend(true)
+    .linkThreeObject(link => {
+      if (!link.label) return null;
+      const sprite = new SpriteText(link.label);
+      sprite.color = '#94a3b8';
+      sprite.textHeight = 1.8;
+      sprite.fontFace = 'Inter, sans-serif';
+      sprite.backgroundColor = 'rgba(10, 14, 26, 0.6)';
+      sprite.padding = 1.5;
+      sprite.borderRadius = 2;
+      return sprite;
+    })
+    .linkPositionUpdate((sprite, { start, end }) => {
+      if (!sprite) return;
+      const mid = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2, z: (start.z + end.z) / 2 };
+      Object.assign(sprite.position, mid);
+    })
+    // ── Physics ──
+    .d3AlphaDecay(0.03)
+    .d3VelocityDecay(0.25)
+    .warmupTicks(100)
+    .cooldownTicks(150)
+    .d3Force('charge', d3.forceManyBody().strength(-120))
+    .d3Force('link', d3.forceLink().distance(link => {
+      if (link.source?.group === 'run') return 80;
+      if (link.source?.group === 'module') return 60;
+      return 45;
+    }))
+    // ── Click to zoom ──
     .onNodeClick(node => {
-      const distance = 120;
+      const distance = 100;
       const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
       Graph.cameraPosition(
         { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
         node, 1200
       );
+    })
+    .onNodeHover(node => {
+      container.style.cursor = node ? 'pointer' : 'default';
     });
 
-  // Auto-rotate
+  // Gentle auto-rotate
   let angle = 0;
+  let isUserInteracting = false;
+  container.addEventListener('mousedown', () => { isUserInteracting = true; });
+  container.addEventListener('mouseup', () => { setTimeout(() => { isUserInteracting = false; }, 3000); });
+  container.addEventListener('touchstart', () => { isUserInteracting = true; });
+  container.addEventListener('touchend', () => { setTimeout(() => { isUserInteracting = false; }, 3000); });
   function rotate() {
-    Graph.cameraPosition({
-      x: 200 * Math.sin(angle),
-      z: 200 * Math.cos(angle)
-    });
-    angle += 0.002;
+    if (!isUserInteracting) {
+      Graph.cameraPosition({ x: 220 * Math.sin(angle), z: 220 * Math.cos(angle) });
+      angle += 0.0015;
+    }
     requestAnimationFrame(rotate);
   }
   rotate();

@@ -1,6 +1,6 @@
 # 🧰 CAPABILITIES — What Can This Framework Do?
 
-### A Plain-English Guide for Absolute Beginners (Zero Coding Knowledge Required)
+### A Plain-English Guide for Beginners (Zero Coding Knowledge Required)
 
 ---
 
@@ -8,9 +8,25 @@
 > You just joined the team. Someone told you "we use this Playwright framework."
 > You opened the project and thought: *"What does this thing actually do? What's available to me?"*
 >
-> This document answers that question. Every capability is explained like you're 5.
+> This document answers that question. Every capability is explained in plain English.
 >
-> 💡 **Want to write a test right now?** Skip to **[WRITE_A_TEST.md](WRITE_A_TEST.md)** — it's a copy-paste guide with zero coding knowledge required.
+> 📖 **Coming from README.md?** Good — this document goes deeper into *what* each feature does.
+>
+> 💡 **Want to write a test right now?** Skip to **[WRITE_A_TEST.md](WRITE_A_TEST.md)** — it's a copy-paste guide.
+>
+> 🔀 **Want to see how XRAY works end-to-end?** Read **[WALKTHROUGH.md](WALKTHROUGH.md)** — it's a step-by-step flow with diagrams.
+
+---
+
+### How to Read This Document
+
+Each capability follows the same format:
+1. **What is it?** — Plain-English explanation (no jargon)
+2. **What can it do?** — Table of features
+3. **How to use/enable it?** — Config and code examples
+4. **Where is the code?** — Exact file paths
+
+> **💡 Tip:** Use the Table of Contents to jump directly to any section.
 
 ---
 
@@ -841,7 +857,9 @@ No server needed, no login required, no special software — just double-click t
 |---------|----------------|
 | **Header** | Environment (dev/staging/prod), sprint number, total duration, run date |
 | **Summary Cards** | Total tests, passed, failed, pass rate %, suite duration, UI count, API count |
+| **3D Relationship Graph** | Interactive 3D force-directed graph showing how tests, pages, APIs, and assertions connect |
 | **Charts** | Pass/Fail donut, test type breakdown, duration bar chart, a11y issues |
+| **Observability Dashboard** | Network stats (total requests, transfer size), page load timing, FCP/LCP metrics |
 | **Results Table** | Every test with: full name, 🖥️ UI / 🔌 API badge, PASS/FAIL badge, start time, duration |
 | **Screenshots** | Failure screenshots shown inline — click to zoom |
 | **Step Log Accordion** | Expand any test to see every log message from that test |
@@ -1630,3 +1648,4 @@ Every utility is controlled by your `.env` file. Here's the master switch for ea
 *Last updated: 4 March 2026*
 *Framework: Playwright + JIRA XRAY + Multi-Utility Architecture*
 *Tests: 3 UI (login) + 3 API (REST) = 6 total*
+*Next: Read [WALKTHROUGH.md](WALKTHROUGH.md) to see the end-to-end XRAY flow, or [WRITE_A_TEST.md](WRITE_A_TEST.md) to write your first test.*

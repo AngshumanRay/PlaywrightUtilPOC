@@ -3,9 +3,32 @@
 
 ---
 
-> **Before you read this:** You don't need to understand any code to follow this guide.
-> Every concept is explained in plain English with pictures (diagrams) made of text.
+> **You don't need to understand any code to follow this guide.**
+> Every concept is explained in plain English with text diagrams.
 > Read it top to bottom — each section builds on the previous one.
+>
+> **Coming from README.md?** Good — this guide goes deeper into *how* the XRAY integration works.
+
+---
+
+## 📚 Table of Contents
+
+| # | Section | What You'll Learn |
+|---|---------|-------------------|
+| 1 | [The Big Picture](#️-the-big-picture--what-happens-when-you-run-tests) | The 3 phases every test run goes through |
+| 2 | [Understanding the Moving Parts](#️-section-1--understanding-the-moving-parts) | What JIRA, XRAY, and Playwright actually are |
+| 3 | [How Authentication Works](#-section-2--how-authentication-works) | How the framework proves its identity to JIRA |
+| 4 | [How Test Cases Are Fetched](#-section-3--how-test-cases-are-fetched-from-xray-test-set) | How the framework reads your test list from JIRA |
+| 5 | [How a Test Execution Is Created](#-section-4--how-a-test-execution-is-created-in-jira-xray) | How the "result container" is made in JIRA |
+| 6 | [How Tests Are Matched to XRAY](#-section-5--how-playwright-knows-which-tests-to-run) | The annotation that links code to JIRA tickets |
+| 7 | [4 Ways to Map Tests](#-section-6--the-4-ways-to-map-tests-choose-what-fits-your-team) | Choose the mapping approach that fits your team |
+| 8 | [What Happens During Execution](#️-section-7--what-happens-during-test-execution) | Step-by-step: what Playwright records per test |
+| 9 | [How Results Upload to JIRA](#-section-8--how-results-are-uploaded-back-to-jira-xray) | The teardown phase — uploading PASS/FAIL + screenshots |
+| 10 | [Which File Does What](#️-section-9--which-file-does-what-plain-english) | Plain-English map of every file in the project |
+| 11 | [First Time Setup Checklist](#-section-10--first-time-setup-your-step-by-step-checklist) | Step-by-step checklist to get running |
+| 12 | [Understanding Terminal Output](#-section-11--understanding-test-results-in-your-terminal) | What those coloured messages in the terminal mean |
+| 13 | [FAQ](#-section-12--frequently-asked-questions) | Answers to the most common questions |
+| 14 | [Who to Contact](#-section-13--who-to-contact-for-what) | Which person to ask for which problem |
 
 ---
 
@@ -672,7 +695,9 @@ After the XRAY upload, the HTML execution report is automatically generated:
 ```
 reports/execution-report-2026-03-03.html
 ├─ Summary: 6 tests | 5 passed | 1 failed | 3 🖥️ UI | 3 🔌 API | pass rate 83%
+├─ 3D Relationship Graph: interactive force-directed graph linking tests → pages → APIs → assertions
 ├─ Charts: pass/fail donut, type breakdown, duration bar, a11y issues
+├─ Observability: network requests, transfer size, page load, FCP/LCP
 ├─ Results table with per-test badges, start time, duration, screenshot
 └─ Step log accordion: expand any test to see every log entry
 ```
@@ -876,11 +901,14 @@ When tests run, the terminal shows messages like this. Here's what each means:
 > After running tests, open the file `reports/execution-report-YYYY-MM-DD.html` in any browser.
 > A new report is generated automatically after every `npm test` run.
 > It shows:
-> - 9 summary cards: total, passed, failed, pass rate, duration, UI count, API count
+> - Summary cards: total, passed, failed, pass rate, duration, UI count, API count
 > - Charts: pass/fail donut, test type breakdown, duration bar, a11y issues
 > - Results table with 🖥️ UI / 🔌 API badge per test, screenshots for failures (click to zoom)
 > - Step log accordion: expand any test to see every single action step
+> - Observability dashboard: performance metrics, network stats, page load times
 > - Full XRAY integration status and links (or demo-mode explanation if JIRA not configured)
+>
+> See **[CAPABILITIES.md → HTML Execution Report](CAPABILITIES.md#-html-execution-report)** for full details on every report section.
 
 ---
 
@@ -917,5 +945,6 @@ When tests run, the terminal shows messages like this. Here's what each means:
 
 ---
 
-*Last updated: 3 March 2026*
+*Last updated: 4 March 2026*
 *Framework version: 1.2.0 — 6 tests (3 UI + 3 API), full HTML report, comprehensive XRAY integration*
+*Next: Read [CAPABILITIES.md](CAPABILITIES.md) to explore every feature, or [WRITE_A_TEST.md](WRITE_A_TEST.md) to write your first test.*
