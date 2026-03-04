@@ -571,9 +571,10 @@ test.describe('Your Feature Name', () => {                          // ← CHANG
 - **Error you can't fix?** Copy the error text and send it to a developer.
 - **Not sure what the page element is called?** Open the website in Chrome,
   right-click the button/field → "Inspect" → look at the text or label.
-- **Want to see real examples?** Look at `tests/login.test.ts` (3 UI tests)
-  and `tests/api.test.ts` (3 API tests) in this project.
+- **Want to see real examples?** Look at `tests/login.test.ts` (3 login tests),
+  `tests/api.test.ts` (3 API tests), and `tests/playwright-dev.test.ts` (5 navigation tests).
+- **Want a step-by-step walkthrough?** Read **[HOWTO_5_NAVIGATION_TESTS.md](HOWTO_5_NAVIGATION_TESTS.md)** — it explains exactly how the 5 playwright.dev tests were built from scratch.
 
 ---
 
-*Last updated: 3 March 2026*
+*Last updated: 4 March 2026*

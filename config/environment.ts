@@ -185,6 +185,40 @@ export const config = {
   },
 
   // --------------------------------------------------------------------------
+  // GLOBAL WAITS & TIMEOUTS
+  // --------------------------------------------------------------------------
+  // Control how long Playwright waits for various operations.
+  // Every team can tune these in .env to match their application's speed.
+  // All values are in milliseconds (1 second = 1000 ms).
+  // --------------------------------------------------------------------------
+  timeouts: {
+    /** Max time (ms) a single test can run before timing out (default: 60s) */
+    test:       parseInt(getOptionalEnvVar('TEST_TIMEOUT', '60000'), 10),
+
+    /** Max time (ms) for expect() assertions to auto-wait (default: 10s) */
+    expect:     parseInt(getOptionalEnvVar('EXPECT_TIMEOUT', '10000'), 10),
+
+    /** Max time (ms) for a single action — click, fill, type (default: 10s) */
+    action:     parseInt(getOptionalEnvVar('ACTION_TIMEOUT', '10000'), 10),
+
+    /** Max time (ms) for page navigation — goto, reload (default: 30s) */
+    navigation: parseInt(getOptionalEnvVar('NAVIGATION_TIMEOUT', '30000'), 10),
+  },
+
+  // --------------------------------------------------------------------------
+  // BROWSER VIEWPORT
+  // --------------------------------------------------------------------------
+  // The browser window size used during tests.
+  // --------------------------------------------------------------------------
+  viewport: {
+    /** Browser window width in pixels */
+    width:  parseInt(getOptionalEnvVar('VIEWPORT_WIDTH', '1280'), 10),
+
+    /** Browser window height in pixels */
+    height: parseInt(getOptionalEnvVar('VIEWPORT_HEIGHT', '720'), 10),
+  },
+
+  // --------------------------------------------------------------------------
   // EXECUTION MODES
   // --------------------------------------------------------------------------
   // Control HOW tests run without changing code.

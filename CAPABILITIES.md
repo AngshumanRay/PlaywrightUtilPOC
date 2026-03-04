@@ -117,6 +117,21 @@ Just set `BASE_URL` in your `.env` file to your website's address. That's it.
 BASE_URL=https://your-app.com
 ```
 
+### ⏱️ Global Waits & Timeouts
+
+Every team has different application speeds. Instead of digging into config files, just set timeouts in `.env`:
+
+| Setting | What It Controls | Default |
+|---------|------------------|---------|
+| `TEST_TIMEOUT` | Max time a single test can run | 60000 (60s) |
+| `EXPECT_TIMEOUT` | Max time for `expect()` auto-wait | 10000 (10s) |
+| `ACTION_TIMEOUT` | Max time for click/fill/type actions | 10000 (10s) |
+| `NAVIGATION_TIMEOUT` | Max time for page.goto() navigation | 30000 (30s) |
+| `VIEWPORT_WIDTH` | Browser window width in pixels | 1280 |
+| `VIEWPORT_HEIGHT` | Browser window height in pixels | 720 |
+
+> **No code changes needed!** Just edit `.env` and re-run tests.
+
 ### Where is the code?
 - `pages/BasePage.ts` — reusable actions (click, fill, navigate, wait)
 - `pages/LoginPage.ts` — login-specific actions (an example page)
@@ -857,9 +872,8 @@ No server needed, no login required, no special software — just double-click t
 |---------|----------------|
 | **Header** | Environment (dev/staging/prod), sprint number, total duration, run date |
 | **Summary Cards** | Total tests, passed, failed, pass rate %, suite duration, UI count, API count |
-| **3D Relationship Graph** | Interactive 3D force-directed graph showing how tests, pages, APIs, and assertions connect |
-| **Charts** | Pass/Fail donut, test type breakdown, duration bar chart, a11y issues |
 | **Observability Dashboard** | Network stats (total requests, transfer size), page load timing, FCP/LCP metrics |
+| **Charts** | Pass/Fail donut, test type breakdown, duration bar chart, a11y issues |
 | **Results Table** | Every test with: full name, 🖥️ UI / 🔌 API badge, PASS/FAIL badge, start time, duration |
 | **Screenshots** | Failure screenshots shown inline — click to zoom |
 | **Step Log Accordion** | Expand any test to see every log message from that test |
@@ -1598,8 +1612,10 @@ The framework will show your tool in the Utility Status Dashboard:
 | **`tests/xray-test-fixture.ts`** | Wraps every test with XRAY reporting + a11y scan + popup handling |
 | **`tests/login.test.ts`** | UI test cases — 3 login tests (TC01–TC03) |
 | **`tests/api.test.ts`** | API test cases — 3 REST API tests (TC04–TC06) |
+| **`tests/playwright-dev.test.ts`** | Navigation test cases — 5 playwright.dev tests (TC07–TC11) |
 | **`pages/BasePage.ts`** | Reusable browser actions — click, fill, navigate, wait |
 | **`pages/LoginPage.ts`** | Login page specific actions — enter username, click login |
+| **`pages/PlaywrightDevPage.ts`** | playwright.dev page actions — navigate tabs, switch language |
 | **`utils/jira-xray/*.ts`** | Everything JIRA/XRAY — auth, fetch tests, create execution, upload results |
 | **`utils/reporting/report-generator.ts`** | Builds the full HTML execution report with charts and screenshots |
 | **`utils/database/test-data-manager.ts`** | Seeds and cleans up test data in your database |
@@ -1614,6 +1630,8 @@ The framework will show your tool in the Utility Status Dashboard:
 | **`utils/helpers/screenshot.ts`** | Captures browser screenshots |
 | **`utils/index.ts`** | Barrel file — import anything from one place |
 | **`playwright.config.ts`** | Playwright settings (browsers, timeouts, retries) |
+| **`.env` timeouts** | `TEST_TIMEOUT`, `EXPECT_TIMEOUT`, `ACTION_TIMEOUT`, `NAVIGATION_TIMEOUT` |
+| **`.env` viewport** | `VIEWPORT_WIDTH`, `VIEWPORT_HEIGHT` |
 
 ---
 
@@ -1626,6 +1644,8 @@ Every utility is controlled by your `.env` file. Here's the master switch for ea
 | **Playwright (UI tests)** | Always on (it's the core) | Can't disable |
 | **API Testing** | Always on (no config needed) | Can't disable |
 | **HTML Report** | Always on — generated after every run | Can't disable |
+| **Global Timeouts** | Set `TEST_TIMEOUT`, `ACTION_TIMEOUT`, etc. in `.env` | Uses sensible defaults (60s/10s/10s/30s) |
+| **Browser Viewport** | Set `VIEWPORT_WIDTH`, `VIEWPORT_HEIGHT` in `.env` | Defaults to 1280×720 |
 | **JIRA XRAY** | Set real values for `JIRA_BASE_URL`, `JIRA_USERNAME`, `JIRA_API_TOKEN` | Leave the placeholder values — tests still run |
 | **Database** | Set `DB_ENABLED=true` + fill connection details | Set `DB_ENABLED=false` |
 | **Email** | Set `EMAIL_ENABLED=true` + fill API key | Set `EMAIL_ENABLED=false` |
@@ -1647,5 +1667,5 @@ Every utility is controlled by your `.env` file. Here's the master switch for ea
 
 *Last updated: 4 March 2026*
 *Framework: Playwright + JIRA XRAY + Multi-Utility Architecture*
-*Tests: 3 UI (login) + 3 API (REST) = 6 total*
+*Tests: 3 Login (UI) + 3 API (REST) + 5 Navigation (UI) = 11 total*
 *Next: Read [WALKTHROUGH.md](WALKTHROUGH.md) to see the end-to-end XRAY flow, or [WRITE_A_TEST.md](WRITE_A_TEST.md) to write your first test.*

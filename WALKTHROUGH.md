@@ -946,5 +946,5 @@ When tests run, the terminal shows messages like this. Here's what each means:
 ---
 
 *Last updated: 4 March 2026*
-*Framework version: 1.2.0 — 6 tests (3 UI + 3 API), full HTML report, comprehensive XRAY integration*
+*Framework version: 1.3.0 — 11 tests (3 Login + 3 API + 5 Navigation), full HTML report, comprehensive XRAY integration*
 *Next: Read [CAPABILITIES.md](CAPABILITIES.md) to explore every feature, or [WRITE_A_TEST.md](WRITE_A_TEST.md) to write your first test.*

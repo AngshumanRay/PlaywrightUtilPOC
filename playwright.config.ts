@@ -78,18 +78,19 @@ export default defineConfig({
   // Maximum time (in milliseconds) a SINGLE TEST can take before it's marked
   // as "timed out" (failed due to taking too long).
   //
-  // 60,000ms = 60 seconds = 1 minute per test
-  // Increase this if your tests involve slow operations (large file uploads, etc.)
-  timeout: 60000,
+  // Controlled by TEST_TIMEOUT in .env (default: 60000 = 60 seconds).
+  // Increase for slow apps or large file uploads.
+  timeout: parseInt(process.env['TEST_TIMEOUT'] ?? '60000', 10),
 
   // ==========================================================================
   // EXPECT TIMEOUT
   // ==========================================================================
   // Maximum time for a single "expect()" assertion to wait.
   // Playwright auto-waits for assertions — this is how long it waits.
-  // 10,000ms = 10 seconds for each assertion
+  //
+  // Controlled by EXPECT_TIMEOUT in .env (default: 10000 = 10 seconds).
   expect: {
-    timeout: 10000,
+    timeout: parseInt(process.env['EXPECT_TIMEOUT'] ?? '10000', 10),
   },
 
   // ==========================================================================
@@ -192,22 +193,27 @@ export default defineConfig({
     // BROWSER VIEWPORT SIZE
     // ------------------------------------------------------------------------
     // The size of the browser window for tests.
-    // 1280x720 is a common desktop resolution.
-    viewport: { width: 1280, height: 720 },
+    // Controlled by VIEWPORT_WIDTH and VIEWPORT_HEIGHT in .env.
+    // Default: 1280x720 (common desktop resolution).
+    viewport: {
+      width:  parseInt(process.env['VIEWPORT_WIDTH']  ?? '1280', 10),
+      height: parseInt(process.env['VIEWPORT_HEIGHT'] ?? '720',  10),
+    },
 
     // ------------------------------------------------------------------------
     // ACTION TIMEOUT
     // ------------------------------------------------------------------------
     // Maximum time for a single ACTION (click, fill, etc.) before it times out.
-    // 10 seconds per action is usually plenty for most web applications.
-    actionTimeout: 10000,
+    // Controlled by ACTION_TIMEOUT in .env (default: 10000 = 10 seconds).
+    actionTimeout: parseInt(process.env['ACTION_TIMEOUT'] ?? '10000', 10),
 
     // ------------------------------------------------------------------------
     // NAVIGATION TIMEOUT
     // ------------------------------------------------------------------------
     // Maximum time to wait for a page navigation (page.goto(), page.click() that
     // triggers navigation, etc.) to complete.
-    navigationTimeout: 30000,
+    // Controlled by NAVIGATION_TIMEOUT in .env (default: 30000 = 30 seconds).
+    navigationTimeout: parseInt(process.env['NAVIGATION_TIMEOUT'] ?? '30000', 10),
   },
 
   // ==========================================================================

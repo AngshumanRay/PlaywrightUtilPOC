@@ -10,7 +10,7 @@
 ## ⚡ Quick Start (Already Set Up? Run Tests in 10 Seconds)
 
 ```bash
-npm test                       # Run all 6 tests (3 UI + 3 API) → results go to JIRA + HTML report
+npm test                       # Run all 11 tests (3 Login + 3 API + 5 Navigation) → results go to JIRA + HTML report
 open reports/execution-report-*.html   # View the visual report in your browser
 ```
 
@@ -26,6 +26,7 @@ open reports/execution-report-*.html   # View the visual report in your browser
 | **[WRITE_A_TEST.md](WRITE_A_TEST.md)** | Copy-paste guide to write your first test | **Non-technical users** |
 | **[CAPABILITIES.md](CAPABILITIES.md)** | Every feature explained in plain English | **New team members exploring the framework** |
 | **[WALKTHROUGH.md](WALKTHROUGH.md)** | End-to-end XRAY flow with diagrams | **Anyone learning how JIRA reporting works** |
+| **[HOWTO_5_NAVIGATION_TESTS.md](HOWTO_5_NAVIGATION_TESTS.md)** | Step-by-step guide: how the 5 navigation tests were built | **Anyone adding new test suites** |
 | **[docs/RUN_REPORT_*.md](docs/)** | Auto-generated run reports | Anyone reviewing past test runs |
 
 > 💡 **Not a developer?** Read this README for setup, then go straight to **[WRITE_A_TEST.md](WRITE_A_TEST.md)** — it explains how to write a test with zero coding knowledge.
@@ -62,8 +63,8 @@ A one-command test framework that does three things automatically:
 | **During tests** | Opens Chrome for UI tests, calls REST APIs for API tests, checks assertions, captures failure screenshots |
 | **After tests** | Uploads PASS/FAIL to JIRA XRAY → attaches screenshots → generates HTML report → cleans up test data |
 
-> **Both UI tests** (browser automation) and **API tests** (direct backend calls) are supported.
-> Both types report to JIRA XRAY and appear in the HTML report.
+> **UI tests** (browser automation), **API tests** (direct backend calls), and **Navigation tests** (cross-site browsing) are all supported.
+> All types report to JIRA XRAY and appear in the HTML report.
 
 ---
 
@@ -73,8 +74,9 @@ A one-command test framework that does three things automatically:
 project-root/
 │
 ├── tests/                        ← TEST FILES (what to test)
-│   ├── login.test.ts             ← UI tests: Login feature (3 test cases)
-│   ├── api.test.ts               ← API tests: Backend REST API (3 test cases)
+│   ├── login.test.ts             ← UI tests: Login feature (3 test cases: TC01-TC03)
+│   ├── api.test.ts               ← API tests: Backend REST API (3 test cases: TC04-TC06)
+│   ├── playwright-dev.test.ts    ← Navigation tests: playwright.dev (5 test cases: TC07-TC11)
 │   ├── global-setup.ts           ← Runs ONCE before all tests (XRAY setup, DB seed)
 │   ├── global-teardown.ts        ← Runs ONCE after all tests (upload results, HTML report)
 │   ├── xray-test-fixture.ts      ← Adds XRAY reporting + a11y scan to every test automatically
@@ -82,7 +84,8 @@ project-root/
 │
 ├── pages/                        ← PAGE OBJECTS (how to interact with pages)
 │   ├── BasePage.ts               ← Common actions: click, fill, navigate, cookies...
-│   └── LoginPage.ts              ← Login-specific actions and locators
+│   ├── LoginPage.ts              ← Login-specific actions and locators
+│   └── PlaywrightDevPage.ts      ← playwright.dev navigation actions and locators
 │
 ├── utils/                        ← UTILITIES (helper code — one folder per tool)
 │   ├── jira-xray/                ← JIRA XRAY integration
@@ -124,6 +127,7 @@ project-root/
 ├── WRITE_A_TEST.md               ← ✍️  How to write a test (zero coding knowledge needed)
 ├── CAPABILITIES.md               ← 🧰 What can this framework do?
 ├── WALKTHROUGH.md                ← 📖 How the XRAY flow works end-to-end
+├── HOWTO_5_NAVIGATION_TESTS.md   ← 🧭 Step-by-step: how the 5 navigation tests were built
 ├── README.md                     ← 📚 Setup guide (this file)
 │
 ├── reports/                      ← HTML execution reports (auto-generated)
@@ -578,5 +582,5 @@ npm run test:debug
 
 *Last updated: 4 March 2026*
 *Framework: Playwright + JIRA XRAY + Multi-Utility Architecture*
-*Tests: 3 UI (login) + 3 API (REST) = 6 total*
+*Tests: 3 Login (UI) + 3 API (REST) + 5 Navigation (UI) = 11 total*
 *XRAY: Test Set = manual setup, Test Execution onward = fully automated*
