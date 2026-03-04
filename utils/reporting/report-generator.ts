@@ -175,6 +175,25 @@ function buildHtml(input: ReportInput): string {
     return 'UI';
   };
 
+  // --------------------------------------------------------------------------
+  // Detect test suite group (for report grouping)
+  // --------------------------------------------------------------------------
+  const getSuiteGroup = (r: ReportTestResult): string => {
+    const title = (r.testName ?? '').toLowerCase();
+    const key   = r.testCaseKey;
+    // API tests (TC04-TC06)
+    if (getTestType(r) === 'API') return '🔌 API Feature Tests';
+    // Login tests (TC01-TC03)
+    if (title.includes('login') || title.includes('credential') || title.includes('password') ||
+        key === 'PROJ-101' || key === 'PROJ-102' || key === 'PROJ-103') return '🔐 Login Feature Tests';
+    // Playwright.dev navigation tests (TC07-TC11)
+    if (title.includes('playwright') || title.includes('docs tab') || title.includes('api tab') ||
+        title.includes('community') || title.includes('python') || title.includes('homepage') ||
+        key === 'PROJ-107' || key === 'PROJ-108' || key === 'PROJ-109' || key === 'PROJ-110' || key === 'PROJ-111') return '🌐 Playwright.dev Navigation Tests';
+    // Fallback
+    return '📋 Other Tests';
+  };
+
   const uiCount  = results.filter(r => getTestType(r) === 'UI').length;
   const apiCount = results.filter(r => getTestType(r) === 'API').length;
 
@@ -278,34 +297,40 @@ function buildHtml(input: ReportInput): string {
     desc: `Test execution on ${input.runDate} — ${total} tests, ${passRate}% pass rate`,
   });
 
-  // ─── Layer 1: Module nodes ───
-  if (uiCount > 0) {
-    graphNodes.push({
-      id: 'UI_MODULE', group: 'module',
-      label: `🖥️ UI Tests (${uiCount})`,
-      val: 14, color: '#22d3ee',
-      desc: `${uiCount} browser-based UI tests with page interactions`,
-    });
-    const uiPassed = results.filter(r => getTestType(r) === 'UI' && r.status === 'PASS').length;
-    graphLinks.push({
-      source: 'RUN', target: 'UI_MODULE',
-      label: `${uiPassed}/${uiCount} passed`,
-      color: uiPassed === uiCount ? '#22c55e' : '#f59e0b',
-      width: 3,
-    });
+  // ─── Layer 1: Module nodes (one per test suite group) ───
+  // Build module nodes dynamically from suite groups so new test files
+  // automatically get their own graph module without code changes.
+  const suiteGroupMap = new Map<string, { results: ReportTestResult[]; moduleId: string; color: string; icon: string }>();
+  for (const r of results) {
+    const group = getSuiteGroup(r);
+    if (!suiteGroupMap.has(group)) {
+      const testType = getTestType(r);
+      // Assign distinct colors and icons per suite
+      const isApi = testType === 'API';
+      const isLogin = group.includes('Login');
+      const isNav   = group.includes('Navigation') || group.includes('Playwright.dev');
+      const color   = isApi ? '#fb923c' : isLogin ? '#22d3ee' : isNav ? '#a78bfa' : '#34d399';
+      const icon    = isApi ? '🔌' : isLogin ? '🔐' : isNav ? '🌐' : '🖥️';
+      const moduleId = group.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
+      suiteGroupMap.set(group, { results: [], moduleId, color, icon });
+    }
+    suiteGroupMap.get(group)!.results.push(r);
   }
-  if (apiCount > 0) {
+
+  for (const [groupName, { results: groupResults, moduleId, color, icon }] of suiteGroupMap) {
+    const groupPassed = groupResults.filter(r => r.status === 'PASS').length;
+    const groupTotal  = groupResults.length;
+
     graphNodes.push({
-      id: 'API_MODULE', group: 'module',
-      label: `🔌 API Tests (${apiCount})`,
-      val: 14, color: '#fb923c',
-      desc: `${apiCount} REST API tests (no browser, direct HTTP)`,
+      id: moduleId, group: 'module',
+      label: `${icon} ${groupName.replace(/^[^\s]+\s/, '')} (${groupTotal})`,
+      val: 14, color,
+      desc: `${groupTotal} tests — ${groupPassed}/${groupTotal} passed`,
     });
-    const apiPassed = results.filter(r => getTestType(r) === 'API' && r.status === 'PASS').length;
     graphLinks.push({
-      source: 'RUN', target: 'API_MODULE',
-      label: `${apiPassed}/${apiCount} passed`,
-      color: apiPassed === apiCount ? '#22c55e' : '#f59e0b',
+      source: 'RUN', target: moduleId,
+      label: `${groupPassed}/${groupTotal} passed`,
+      color: groupPassed === groupTotal ? '#22c55e' : '#f59e0b',
       width: 3,
     });
   }
@@ -328,8 +353,11 @@ function buildHtml(input: ReportInput): string {
     });
 
     // Module → Test (labeled with status + duration)
+    // Find the correct parent module using suite group mapping
+    const suiteGroup = getSuiteGroup(r);
+    const parentModuleId = suiteGroupMap.get(suiteGroup)?.moduleId ?? 'RUN';
     graphLinks.push({
-      source: testType === 'UI' ? 'UI_MODULE' : 'API_MODULE',
+      source: parentModuleId,
       target: r.testCaseKey,
       label: r.status + (durLabel ? ' · ' + durLabel : ''),
       color: statusColor,
@@ -979,26 +1007,52 @@ ${isJiraConfigured
 
 <table>
   <thead>
-    <tr><th>Type</th><th>XRAY Key</th><th>Test Name</th><th>Status</th><th>Duration</th><th>Page Load</th><th>A11y</th><th>Started</th><th>Error</th></tr>
+    <tr><th>#</th><th>Type</th><th>XRAY Key</th><th>Test Name</th><th>Status</th><th>Duration</th><th>Page Load</th><th>A11y</th><th>Started</th><th>Error</th></tr>
   </thead>
   <tbody>
-    ${results.map(r => {
-      const perfEntry  = perfData.find(p => p.testName?.includes(r.testCaseKey));
-      const a11yEntry  = a11yData[r.testCaseKey] ?? [];
-      const critA11y   = a11yEntry.filter(v => v.impact === 'critical' || v.impact === 'serious').length;
-      const durSec     = r.durationMs
-        ? (r.durationMs/1000).toFixed(1) + 's'
-        : (perfEntry?.durationMs ? (perfEntry.durationMs/1000).toFixed(1) + 's' : '—');
-      const loadSec    = perfEntry?.pageLoadMs ? (perfEntry.pageLoadMs/1000).toFixed(1) + 's' : '—';
-      const badgeClass = r.status === 'PASS' ? 'badge-pass' : r.status === 'FAIL' ? 'badge-fail' : 'badge-skip';
-      const testType   = getTestType(r);
-      const startTime  = r.startedAt ? new Date(r.startedAt).toLocaleTimeString() : '—';
-      const xrayHref = r.xrayLink ?? (isJiraConfigured && jiraBase && r.testCaseKey ? jiraBase + '/browse/' + r.testCaseKey : '');
-      const xrayChip = xrayHref
-        ? `<a href="${xrayHref}" target="_blank" class="xray-chip" title="Open in JIRA XRAY">${r.testCaseKey}</a>`
-        : `<span class="xray-chip-demo" title="Configure JIRA_BASE_URL in .env">${r.testCaseKey}</span>`;
-      return `
+    ${(() => {
+      // Group tests by suite for clear visual separation
+      const suiteGroups = new Map<string, ReportTestResult[]>();
+      for (const r of results) {
+        const group = getSuiteGroup(r);
+        if (!suiteGroups.has(group)) suiteGroups.set(group, []);
+        suiteGroups.get(group)!.push(r);
+      }
+
+      let testNumber = 0;
+      return Array.from(suiteGroups.entries()).map(([suiteName, suiteTests]) => {
+        const suitePass = suiteTests.filter(t => t.status === 'PASS').length;
+        const suiteFail = suiteTests.filter(t => t.status === 'FAIL').length;
+        const suiteStatusBadge = suiteFail > 0
+          ? `<span class="badge badge-fail" style="font-size:10px">${suiteFail} FAIL</span>`
+          : `<span class="badge badge-pass" style="font-size:10px">${suitePass}/${suiteTests.length} PASS</span>`;
+
+        const headerRow = `<tr style="background:rgba(99,102,241,0.08);border-top:2px solid var(--accent-blue)">
+          <td colspan="10" style="padding:12px 16px;font-weight:700;font-size:14px;color:var(--accent-cyan);letter-spacing:0.3px">
+            ${suiteName} <span style="font-weight:400;font-size:12px;color:var(--text-secondary);margin-left:8px">(${suiteTests.length} tests)</span>
+            ${suiteStatusBadge}
+          </td>
+        </tr>`;
+
+        const dataRows = suiteTests.map(r => {
+          testNumber++;
+          const perfEntry  = perfData.find(p => p.testName?.includes(r.testCaseKey));
+          const a11yEntry  = a11yData[r.testCaseKey] ?? [];
+          const critA11y   = a11yEntry.filter(v => v.impact === 'critical' || v.impact === 'serious').length;
+          const durSec     = r.durationMs
+            ? (r.durationMs/1000).toFixed(1) + 's'
+            : (perfEntry?.durationMs ? (perfEntry.durationMs/1000).toFixed(1) + 's' : '—');
+          const loadSec    = perfEntry?.pageLoadMs ? (perfEntry.pageLoadMs/1000).toFixed(1) + 's' : '—';
+          const badgeClass = r.status === 'PASS' ? 'badge-pass' : r.status === 'FAIL' ? 'badge-fail' : 'badge-skip';
+          const testType   = getTestType(r);
+          const startTime  = r.startedAt ? new Date(r.startedAt).toLocaleTimeString() : '—';
+          const xrayHref = r.xrayLink ?? (isJiraConfigured && jiraBase && r.testCaseKey ? jiraBase + '/browse/' + r.testCaseKey : '');
+          const xrayChip = xrayHref
+            ? `<a href="${xrayHref}" target="_blank" class="xray-chip" title="Open in JIRA XRAY">${r.testCaseKey}</a>`
+            : `<span class="xray-chip-demo" title="Configure JIRA_BASE_URL in .env">${r.testCaseKey}</span>`;
+          return `
     <tr>
+      <td style="text-align:center;color:var(--text-muted);font-size:12px;font-weight:600">${testNumber}</td>
       <td><span class="badge badge-${testType.toLowerCase()}">${testType === 'UI' ? '🖥️ UI' : '🔌 API'}</span></td>
       <td>${xrayChip}</td>
       <td>
@@ -1015,7 +1069,11 @@ ${isJiraConfigured
       <td class="timestamp">${startTime}</td>
       <td style="color:#fca5a5;font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(r.errorMessage ?? '')}">${r.errorMessage ? escapeHtml(r.errorMessage.substring(0, 100)) + (r.errorMessage.length > 100 ? '…' : '') : '—'}</td>
     </tr>`;
-    }).join('')}
+        }).join('');
+
+        return headerRow + dataRows;
+      }).join('');
+    })()}
   </tbody>
 </table>
 
