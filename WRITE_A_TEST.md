@@ -601,7 +601,8 @@ test.describe('Your Feature Name', () => {                          // ← CHANG
 - **Not sure what the page element is called?** Open the website in Chrome,
   right-click the button/field → "Inspect" → look at the text or label.
 - **Want to see real examples?** Look at `tests/login.test.ts` (3 login tests),
-  `tests/api.test.ts` (3 API tests), and `tests/playwright-dev.test.ts` (5 navigation tests).
+  `tests/api.test.ts` (3 API tests), `tests/playwright-dev.test.ts` (5 navigation tests),
+  and `tests/salesforce-iframe.test.ts` (2 iframe tests — demonstrates generic iframe handling).
 - **Want a step-by-step walkthrough?** Read **[HOWTO_5_NAVIGATION_TESTS.md](HOWTO_5_NAVIGATION_TESTS.md)** — it explains exactly how the 5 playwright.dev tests were built from scratch.
 
 ---

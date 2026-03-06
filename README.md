@@ -10,7 +10,7 @@
 ## ⚡ Quick Start (Already Set Up? Run Tests in 10 Seconds)
 
 ```bash
-npm test                       # Run all 11 tests (3 Login + 3 API + 5 Navigation) → results go to JIRA + HTML report
+npm test                       # Run all 13 tests (3 Login + 3 API + 5 Navigation + 2 Iframe) → results go to JIRA + HTML report
 open reports/execution-report-*.html   # View the visual report in your browser
 ```
 
@@ -77,6 +77,7 @@ project-root/
 │   ├── login.test.ts             ← UI tests: Login feature (3 test cases: TC01-TC03)
 │   ├── api.test.ts               ← API tests: Backend REST API (3 test cases: TC04-TC06)
 │   ├── playwright-dev.test.ts    ← Navigation tests: playwright.dev (5 test cases: TC07-TC11)
+│   ├── salesforce-iframe.test.ts  ← Iframe tests: Salesforce-style multi-iframe (2 test cases: TC12-TC13)
 │   ├── global-setup.ts           ← Runs ONCE before all tests (XRAY setup, DB seed)
 │   ├── global-teardown.ts        ← Runs ONCE after all tests (upload results, HTML report)
 │   ├── xray-test-fixture.ts      ← Adds XRAY reporting + a11y scan to every test automatically
@@ -85,7 +86,8 @@ project-root/
 ├── pages/                        ← PAGE OBJECTS (how to interact with pages)
 │   ├── BasePage.ts               ← Common actions: click, fill, navigate, cookies...
 │   ├── LoginPage.ts              ← Login-specific actions and locators
-│   └── PlaywrightDevPage.ts      ← playwright.dev navigation actions and locators
+│   ├── PlaywrightDevPage.ts      ← playwright.dev navigation actions and locators
+│   └── SalesforceIframePage.ts   ← Salesforce-style iframe actions (fill forms inside iframes)
 │
 ├── utils/                        ← UTILITIES (helper code — one folder per tool)
 │   ├── jira-xray/                ← JIRA XRAY integration
@@ -116,8 +118,11 @@ project-root/
 │   └── index.ts                  ← Barrel file (import anything from '../utils')
 │
 ├── test-data/                    ← YAML TEST DATA (data-driven — tests read inputs from here)
-│   ├── ui-tests.yaml             ←   UI test data: Login + Navigation (credentials, URLs, expected results)
+│   ├── ui-tests.yaml             ←   UI test data: Login + Navigation + Iframe (credentials, URLs, form data)
 │   └── api-tests.yaml            ←   API test data: endpoints, payloads, expected status codes
+│
+├── test-fixtures/                ← LOCAL HTML FIXTURES (self-hosted pages for reliable testing)
+│   └── iframe-form.html          ←   Salesforce-style page with 2 iframes and form fields
 │
 ├── config/
 │   └── environment.ts            ← Reads .env file, exports clean config object

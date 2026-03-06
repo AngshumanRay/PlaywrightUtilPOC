@@ -37,7 +37,8 @@
 // Import Playwright types
 // "Page" represents a single browser tab
 // "Locator" represents a way to find an element on the page
-import { type Page, type Locator, expect } from '@playwright/test';
+// "FrameLocator" represents a way to find and interact with elements INSIDE an iframe
+import { type Page, type Locator, type FrameLocator, expect } from '@playwright/test';
 
 // Import our logger for consistent, formatted output
 import { logger } from '../utils/helpers/logger';
@@ -364,5 +365,332 @@ export class BasePage {
     logger.step(`Waiting for page load (state: ${state})`);
     await this.page.waitForLoadState(state);
     logger.info('Page load complete.');
+  }
+
+  // ==========================================================================
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  IFRAME HELPERS — Generic Methods for Working with Iframes
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  //  WHY DO WE NEED IFRAME HELPERS?
+  //  ─────────────────────────────────────────────────────────────────────────
+  //  Many enterprise apps (Salesforce, ServiceNow, Workday) embed parts of
+  //  their UI inside <iframe> elements. An iframe is a "page inside a page" —
+  //  Playwright CANNOT see elements inside an iframe using normal locators.
+  //
+  //  You must first "enter" the iframe, then locate elements WITHIN it.
+  //  These helper methods make that process simple and reusable.
+  //
+  //  USAGE PATTERN (in your Page Object):
+  //  ─────────────────────────────────────────────────────────────────────────
+  //    // 1. Get the iframe by its selector
+  //    const frame = this.getIframe('#myIframe');
+  //
+  //    // 2. Interact with elements INSIDE the iframe
+  //    await this.fillInIframe(frame, 'input[name="email"]', 'test@example.com', 'Email field');
+  //    await this.clickInIframe(frame, 'button[type="submit"]', 'Submit button');
+  //
+  //    // 3. Or get a locator inside the iframe for custom assertions
+  //    const heading = this.locatorInIframe(frame, 'h1');
+  //    await expect(heading).toHaveText('Welcome');
+  //
+  //  SALESFORCE EXAMPLE:
+  //  ─────────────────────────────────────────────────────────────────────────
+  //    // Salesforce typically has iframes like:
+  //    //   iframe[title="accessibility title"]
+  //    //   iframe[name="vfFrameId_xxx"]
+  //    //   iframe.cke_wysiwyg_frame  (rich text editors)
+  //
+  //    const formFrame = this.getIframe('iframe[title="New Lead"]');
+  //    await this.fillInIframe(formFrame, '#firstName', 'John', 'First Name');
+  //    await this.fillInIframe(formFrame, '#lastName',  'Doe',  'Last Name');
+  //    await this.selectInIframe(formFrame, '#status', 'Working', 'Lead Status');
+  //
+  // ==========================================================================
+
+  // ==========================================================================
+  // METHOD: getIframe
+  // ==========================================================================
+  // PURPOSE:
+  //   Returns a FrameLocator for an iframe on the page.
+  //   A FrameLocator lets you find and interact with elements INSIDE the iframe.
+  //
+  // PARAMETERS:
+  //   - selector: CSS selector or role-based selector for the iframe element.
+  //               Examples: '#myIframe', 'iframe[title="Editor"]',
+  //                         'iframe[name="mainFrame"]', 'iframe:nth-child(2)'
+  //
+  // RETURNS:
+  //   A Playwright FrameLocator — use this with the other iframe helper methods.
+  //
+  // USAGE:
+  //   const frame = this.getIframe('iframe#editor');
+  //   // Now use frame with fillInIframe(), clickInIframe(), etc.
+  // ==========================================================================
+  getIframe(selector: string): FrameLocator {
+    logger.step(`Entering iframe: ${selector}`);
+    return this.page.frameLocator(selector);
+  }
+
+  // ==========================================================================
+  // METHOD: getNestedIframe
+  // ==========================================================================
+  // PURPOSE:
+  //   Returns a FrameLocator for an iframe INSIDE another iframe.
+  //   Some applications (like Salesforce Classic) have nested iframes:
+  //     Page → Outer iframe → Inner iframe → Your content
+  //
+  // PARAMETERS:
+  //   - outerSelector: CSS selector for the outer (parent) iframe
+  //   - innerSelector: CSS selector for the inner (child) iframe
+  //
+  // RETURNS:
+  //   A FrameLocator pointing to the inner iframe.
+  //
+  // USAGE:
+  //   const innerFrame = this.getNestedIframe('#outerFrame', '#innerFrame');
+  //   await this.fillInIframe(innerFrame, '#field', 'value', 'Field name');
+  // ==========================================================================
+  getNestedIframe(outerSelector: string, innerSelector: string): FrameLocator {
+    logger.step(`Entering nested iframe: ${outerSelector} → ${innerSelector}`);
+    return this.page.frameLocator(outerSelector).frameLocator(innerSelector);
+  }
+
+  // ==========================================================================
+  // METHOD: locatorInIframe
+  // ==========================================================================
+  // PURPOSE:
+  //   Returns a Locator for an element INSIDE an iframe.
+  //   You can use this locator with any Playwright assertion or action.
+  //
+  // PARAMETERS:
+  //   - frame:    The FrameLocator (from getIframe or getNestedIframe)
+  //   - selector: CSS/role selector for the element inside the iframe
+  //
+  // RETURNS:
+  //   A Locator for the element inside the iframe.
+  //
+  // USAGE:
+  //   const frame = this.getIframe('#myFrame');
+  //   const heading = this.locatorInIframe(frame, 'h1');
+  //   await expect(heading).toHaveText('Welcome');
+  // ==========================================================================
+  locatorInIframe(frame: FrameLocator, selector: string): Locator {
+    return frame.locator(selector);
+  }
+
+  // ==========================================================================
+  // METHOD: fillInIframe
+  // ==========================================================================
+  // PURPOSE:
+  //   Types text into an input field that lives INSIDE an iframe.
+  //   Works exactly like fillInputField() but reaches into the iframe first.
+  //
+  // PARAMETERS:
+  //   - frame:       The FrameLocator (from getIframe)
+  //   - selector:    CSS selector for the input field inside the iframe
+  //   - text:        The text to type
+  //   - description: Human-readable name for logging
+  //
+  // USAGE:
+  //   const frame = this.getIframe('iframe[title="New Lead"]');
+  //   await this.fillInIframe(frame, '#firstName', 'John', 'First Name');
+  // ==========================================================================
+  async fillInIframe(frame: FrameLocator, selector: string, text: string, description: string): Promise<void> {
+    logger.step(`[iframe] Filling "${description}" with: ${text}`);
+    try {
+      const field = frame.locator(selector);
+      await field.waitFor({ state: 'visible', timeout: 10000 });
+      await field.clear();
+      await field.fill(text);
+      logger.info(`[iframe] ✅ Filled: ${description}`);
+    } catch (error) {
+      logger.error(`[iframe] Failed to fill: ${description}`, error);
+      throw error;
+    }
+  }
+
+  // ==========================================================================
+  // METHOD: clickInIframe
+  // ==========================================================================
+  // PURPOSE:
+  //   Clicks an element that lives INSIDE an iframe.
+  //   Works exactly like clickElement() but reaches into the iframe first.
+  //
+  // PARAMETERS:
+  //   - frame:       The FrameLocator (from getIframe)
+  //   - selector:    CSS selector for the element inside the iframe
+  //   - description: Human-readable name for logging
+  //
+  // USAGE:
+  //   const frame = this.getIframe('iframe[title="Editor"]');
+  //   await this.clickInIframe(frame, 'button.save', 'Save button');
+  // ==========================================================================
+  async clickInIframe(frame: FrameLocator, selector: string, description: string): Promise<void> {
+    logger.step(`[iframe] Clicking: ${description}`);
+    try {
+      const element = frame.locator(selector);
+      await element.waitFor({ state: 'visible', timeout: 10000 });
+      await element.click();
+      logger.info(`[iframe] ✅ Clicked: ${description}`);
+    } catch (error) {
+      logger.error(`[iframe] Failed to click: ${description}`, error);
+      throw error;
+    }
+  }
+
+  // ==========================================================================
+  // METHOD: selectInIframe
+  // ==========================================================================
+  // PURPOSE:
+  //   Selects an option from a <select> dropdown INSIDE an iframe.
+  //   Common in Salesforce forms (Lead Status, Industry, etc.)
+  //
+  // PARAMETERS:
+  //   - frame:       The FrameLocator (from getIframe)
+  //   - selector:    CSS selector for the <select> element
+  //   - value:       The visible text of the option to select
+  //   - description: Human-readable name for logging
+  //
+  // USAGE:
+  //   const frame = this.getIframe('iframe[title="New Lead"]');
+  //   await this.selectInIframe(frame, '#leadStatus', 'Working', 'Lead Status');
+  // ==========================================================================
+  async selectInIframe(frame: FrameLocator, selector: string, value: string, description: string): Promise<void> {
+    logger.step(`[iframe] Selecting "${value}" in: ${description}`);
+    try {
+      const dropdown = frame.locator(selector);
+      await dropdown.waitFor({ state: 'visible', timeout: 10000 });
+      await dropdown.selectOption({ label: value });
+      logger.info(`[iframe] ✅ Selected "${value}" in: ${description}`);
+    } catch (error) {
+      logger.error(`[iframe] Failed to select in: ${description}`, error);
+      throw error;
+    }
+  }
+
+  // ==========================================================================
+  // METHOD: assertTextInIframe
+  // ==========================================================================
+  // PURPOSE:
+  //   Verifies that an element inside an iframe contains the expected text.
+  //
+  // PARAMETERS:
+  //   - frame:        The FrameLocator (from getIframe)
+  //   - selector:     CSS selector for the element
+  //   - expectedText: The text to check for
+  //   - description:  Human-readable name for logging
+  //
+  // USAGE:
+  //   const frame = this.getIframe('#editorFrame');
+  //   await this.assertTextInIframe(frame, '#body', 'Hello', 'Editor content');
+  // ==========================================================================
+  async assertTextInIframe(frame: FrameLocator, selector: string, expectedText: string, description: string): Promise<void> {
+    logger.step(`[iframe] Asserting "${description}" contains: "${expectedText}"`);
+    const element = frame.locator(selector);
+    await expect(element).toContainText(expectedText, { timeout: 10000 });
+    logger.info(`[iframe] ✅ Text verified: ${description}`);
+  }
+
+  // ==========================================================================
+  // METHOD: assertVisibleInIframe
+  // ==========================================================================
+  // PURPOSE:
+  //   Verifies that an element inside an iframe is visible.
+  //
+  // PARAMETERS:
+  //   - frame:       The FrameLocator (from getIframe)
+  //   - selector:    CSS selector for the element
+  //   - description: Human-readable name for logging
+  // ==========================================================================
+  async assertVisibleInIframe(frame: FrameLocator, selector: string, description: string): Promise<void> {
+    logger.step(`[iframe] Asserting visible: ${description}`);
+    const element = frame.locator(selector);
+    await expect(element).toBeVisible({ timeout: 10000 });
+    logger.info(`[iframe] ✅ Visible: ${description}`);
+  }
+
+  // ==========================================================================
+  // METHOD: typeInIframe
+  // ==========================================================================
+  // PURPOSE:
+  //   Types text into a contenteditable element inside an iframe (e.g., rich
+  //   text editors like TinyMCE, CKEditor, Quill — common in Salesforce).
+  //   Unlike fill(), type() sends individual keystrokes which works better
+  //   for contenteditable divs that don't behave like normal <input> fields.
+  //
+  // PARAMETERS:
+  //   - frame:       The FrameLocator (from getIframe)
+  //   - selector:    CSS selector for the contenteditable element
+  //   - text:        The text to type
+  //   - description: Human-readable name for logging
+  //
+  // USAGE:
+  //   const editorFrame = this.getIframe('iframe.cke_wysiwyg_frame');
+  //   await this.typeInIframe(editorFrame, '#tinymce', 'Meeting notes...', 'Rich Text Editor');
+  // ==========================================================================
+  async typeInIframe(frame: FrameLocator, selector: string, text: string, description: string): Promise<void> {
+    logger.step(`[iframe] Typing into "${description}": ${text}`);
+    try {
+      const element = frame.locator(selector);
+      await element.waitFor({ state: 'visible', timeout: 10000 });
+      await element.click(); // Focus the element first
+
+      // ── Smart clear: works for both <input>/<textarea> AND contenteditable ──
+      // fill('') only works on <input>, <textarea>, <select> or [contenteditable].
+      // TinyMCE's <body> element sometimes doesn't register as contenteditable
+      // to Playwright, so we fall back to keyboard-based clear (Ctrl+A → Delete).
+      try {
+        await element.fill('');
+      } catch {
+        // Fallback for rich text / contenteditable body elements
+        const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
+        await element.press(`${modifier}+a`);
+        await element.press('Delete');
+      }
+
+      await element.type(text);
+      logger.info(`[iframe] ✅ Typed into: ${description}`);
+    } catch (error) {
+      logger.error(`[iframe] Failed to type into: ${description}`, error);
+      throw error;
+    }
+  }
+
+  // ==========================================================================
+  // METHOD: getIframeFieldValue
+  // ==========================================================================
+  // PURPOSE:
+  //   Reads the current value of an input field inside an iframe.
+  //   Useful for verifying that a field was filled correctly.
+  //
+  // PARAMETERS:
+  //   - frame:    The FrameLocator
+  //   - selector: CSS selector for the input field
+  //
+  // RETURNS:
+  //   The input field's current value as a string.
+  // ==========================================================================
+  async getIframeFieldValue(frame: FrameLocator, selector: string): Promise<string> {
+    return await frame.locator(selector).inputValue();
+  }
+
+  // ==========================================================================
+  // METHOD: getIframeTextContent
+  // ==========================================================================
+  // PURPOSE:
+  //   Reads the text content of an element inside an iframe (for non-input
+  //   elements like <div>, <p>, <span>). Useful for reading rich text editor
+  //   content or verifying labels.
+  //
+  // PARAMETERS:
+  //   - frame:    The FrameLocator
+  //   - selector: CSS selector for the element
+  //
+  // RETURNS:
+  //   The element's text content as a string.
+  // ==========================================================================
+  async getIframeTextContent(frame: FrameLocator, selector: string): Promise<string> {
+    return (await frame.locator(selector).textContent()) ?? '';
   }
 }

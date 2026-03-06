@@ -89,3 +89,39 @@ PROJ-111:
   expectedTitle: "Playwright Python"
   expectedHeading: ""
   expectedUrl: "/python/"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  🖼️  IFRAME TESTS (TC12, TC13)
+#  Uses a self-hosted HTML fixture (test-fixtures/iframe-form.html) with
+#  two iframes simulating a Salesforce Lead + Contact record page.
+# ─────────────────────────────────────────────────────────────────────────────
+
+PROJ-112:
+  run: yes
+  testCase: "TC12: Iframe — fill multiple form fields inside a single iframe"
+  pageTitle: "Salesforce-Style Iframe Demo"
+  leadIframeSelector: "#lead-iframe"
+  firstName: "John"
+  lastName: "Doe"
+  company: "Acme Corp"
+  email: "john.doe@acme.com"
+  phone: "+1-555-0199"
+  leadStatus: "Working"
+  description: "High-priority lead created by Playwright AutoAgent"
+
+PROJ-113:
+  run: yes
+  testCase: "TC13: Iframe — fill fields across TWO iframes and verify"
+  pageTitle: "Salesforce-Style Iframe Demo"
+  leadIframeSelector: "#lead-iframe"
+  contactIframeSelector: "#contact-iframe"
+  firstName: "Jane"
+  lastName: "Smith"
+  company: "Global Tech Inc"
+  street: "123 Market Street"
+  city: "San Francisco"
+  state: "CA"
+  zip: "94105"
+  country: "United States"
+  website: "https://globaltech.example.com"

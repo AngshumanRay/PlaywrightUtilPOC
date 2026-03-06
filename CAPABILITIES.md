@@ -1614,9 +1614,12 @@ The framework will show your tool in the Utility Status Dashboard:
 | **`tests/login.test.ts`** | UI test cases — 3 login tests (TC01–TC03) |
 | **`tests/api.test.ts`** | API test cases — 3 REST API tests (TC04–TC06) |
 | **`tests/playwright-dev.test.ts`** | Navigation test cases — 5 playwright.dev tests (TC07–TC11) |
-| **`pages/BasePage.ts`** | Reusable browser actions — click, fill, navigate, wait |
+| **`tests/salesforce-iframe.test.ts`** | Iframe test cases — 2 Salesforce-style multi-iframe tests (TC12–TC13) |
+| **`pages/BasePage.ts`** | Reusable browser actions — click, fill, navigate, wait, **iframe helpers** |
 | **`pages/LoginPage.ts`** | Login page specific actions — enter username, click login |
 | **`pages/PlaywrightDevPage.ts`** | playwright.dev page actions — navigate tabs, switch language |
+| **`pages/SalesforceIframePage.ts`** | Salesforce-style iframe page — fill forms inside iframes |
+| **`test-fixtures/iframe-form.html`** | Self-hosted HTML fixture with 2 iframes and form fields |
 | **`utils/jira-xray/*.ts`** | Everything JIRA/XRAY — auth, fetch tests, create execution, upload results |
 | **`utils/reporting/report-generator.ts`** | Builds the full HTML execution report with charts and screenshots |
 | **`utils/database/test-data-manager.ts`** | Seeds and cleans up test data in your database |

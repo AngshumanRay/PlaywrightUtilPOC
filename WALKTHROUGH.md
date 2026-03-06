@@ -727,8 +727,11 @@ reports/execution-report-2026-03-03.html
 | `tests/xray-test-fixture.ts` | The "score tracker" — wraps every test to save its result automatically |
 | `tests/login.test.ts` | The UI tests — 3 browser-based login tests |
 | `tests/api.test.ts` | The API tests — 3 REST API tests that don't use a browser |
-| `pages/BasePage.ts` | The "toolbox" — common browser actions (click, type, navigate) every page can use |
+| `tests/playwright-dev.test.ts` | The navigation tests — 5 playwright.dev tests |
+| `tests/salesforce-iframe.test.ts` | The iframe tests — 2 Salesforce-style multi-iframe tests |
+| `pages/BasePage.ts` | The "toolbox" — common browser actions (click, type, navigate, **iframe helpers**) every page can use |
 | `pages/LoginPage.ts` | The "login page expert" — knows exactly where the username, password, and Login button are |
+| `pages/SalesforceIframePage.ts` | The "iframe expert" — demonstrates filling forms inside iframes |
 | `playwright.config.ts` | The "control room" — tells Playwright which browser to use, how many tests to run in parallel, etc. |
 
 ---
@@ -949,5 +952,5 @@ When tests run, the terminal shows messages like this. Here's what each means:
 ---
 
 *Last updated: 4 March 2026*
-*Framework: Playwright AutoAgent – AI Automation Framework v1.3.0 — 11 tests (3 Login + 3 API + 5 Navigation), full HTML report, comprehensive XRAY integration*
+*Framework: Playwright AutoAgent – AI Automation Framework v1.4.0 — 13 tests (3 Login + 3 API + 5 Navigation + 2 Iframe), full HTML report, comprehensive XRAY integration*
 *Next: Read [CAPABILITIES.md](CAPABILITIES.md) to explore every feature, or [WRITE_A_TEST.md](WRITE_A_TEST.md) to write your first test.*

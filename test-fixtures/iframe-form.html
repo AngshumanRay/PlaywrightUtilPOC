@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Salesforce-Style Iframe Demo — Playwright AutoAgent</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; color: #333; padding: 20px; }
+    h1 { color: #0070d2; margin-bottom: 5px; }
+    .subtitle { color: #666; margin-bottom: 20px; font-size: 14px; }
+    .card { background: #fff; border: 1px solid #d8dde6; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,.08); }
+    .card h2 { color: #0070d2; font-size: 16px; margin-bottom: 12px; border-bottom: 2px solid #0070d2; padding-bottom: 6px; }
+    iframe { width: 100%; border: 2px solid #d8dde6; border-radius: 4px; }
+    #result-banner { display: none; padding: 12px; margin-top: 10px; border-radius: 4px; font-weight: bold; }
+    #result-banner.success { display: block; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!--  MAIN PAGE HEADING (outside any iframe — tests can locate directly)   -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <h1 id="page-title">Salesforce-Style Iframe Demo</h1>
+  <p class="subtitle">This page simulates a Salesforce record with multiple iframes — for Playwright AutoAgent testing.</p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!--  IFRAME 1 — LEAD INFORMATION (multiple input fields in one iframe)    -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div class="card">
+    <h2>📋 Lead Information (iframe #1 — form fields)</h2>
+    <iframe id="lead-iframe" title="Lead Information" srcdoc='
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          * { box-sizing: border-box; }
+          body { font-family: Segoe UI, Arial, sans-serif; padding: 16px; margin: 0; background: #fafbfc; }
+          .form-group { margin-bottom: 12px; }
+          label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 4px; text-transform: uppercase; }
+          input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+          input:focus, select:focus, textarea:focus { outline: none; border-color: #0070d2; box-shadow: 0 0 3px rgba(0,112,210,.3); }
+          .row { display: flex; gap: 16px; }
+          .row .form-group { flex: 1; }
+          textarea { resize: vertical; min-height: 60px; }
+          .field-count { color: #999; font-size: 11px; margin-top: 8px; }
+        </style>
+      </head>
+      <body>
+        <div class="row">
+          <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input type="text" id="firstName" name="firstName" placeholder="Enter first name">
+          </div>
+          <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input type="text" id="lastName" name="lastName" placeholder="Enter last name">
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label for="company">Company</label>
+            <input type="text" id="company" name="company" placeholder="Enter company name">
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="Enter email address">
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label for="phone">Phone</label>
+            <input type="tel" id="phone" name="phone" placeholder="Enter phone number">
+          </div>
+          <div class="form-group">
+            <label for="leadStatus">Lead Status</label>
+            <select id="leadStatus" name="leadStatus">
+              <option value="">-- Select --</option>
+              <option value="New">New</option>
+              <option value="Working">Working</option>
+              <option value="Qualified">Qualified</option>
+              <option value="Unqualified">Unqualified</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="description">Description</label>
+          <textarea id="description" name="description" placeholder="Enter lead description"></textarea>
+        </div>
+        <p class="field-count">7 fields in this iframe</p>
+      </body>
+      </html>
+    ' height="340"></iframe>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!--  IFRAME 2 — CONTACT DETAILS (second iframe, different fields)         -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div class="card">
+    <h2>📇 Contact Details (iframe #2 — additional fields)</h2>
+    <iframe id="contact-iframe" title="Contact Details" srcdoc='
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          * { box-sizing: border-box; }
+          body { font-family: Segoe UI, Arial, sans-serif; padding: 16px; margin: 0; background: #fafbfc; }
+          .form-group { margin-bottom: 12px; }
+          label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 4px; text-transform: uppercase; }
+          input, select { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+          input:focus, select:focus { outline: none; border-color: #0070d2; box-shadow: 0 0 3px rgba(0,112,210,.3); }
+          .row { display: flex; gap: 16px; }
+          .row .form-group { flex: 1; }
+          #save-btn { background: #0070d2; color: #fff; border: none; padding: 10px 24px; border-radius: 4px; font-size: 14px; cursor: pointer; margin-top: 8px; }
+          #save-btn:hover { background: #005bb5; }
+          #save-msg { display: none; color: #155724; background: #d4edda; padding: 8px; border-radius: 4px; margin-top: 8px; font-size: 13px; }
+        </style>
+      </head>
+      <body>
+        <div class="row">
+          <div class="form-group">
+            <label for="street">Street Address</label>
+            <input type="text" id="street" name="street" placeholder="Enter street address">
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label for="city">City</label>
+            <input type="text" id="city" name="city" placeholder="Enter city">
+          </div>
+          <div class="form-group">
+            <label for="state">State</label>
+            <input type="text" id="state" name="state" placeholder="Enter state">
+          </div>
+          <div class="form-group">
+            <label for="zip">Zip Code</label>
+            <input type="text" id="zip" name="zip" placeholder="Enter zip">
+          </div>
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <label for="country">Country</label>
+            <select id="country" name="country">
+              <option value="">-- Select --</option>
+              <option value="US">United States</option>
+              <option value="UK">United Kingdom</option>
+              <option value="IN">India</option>
+              <option value="DE">Germany</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="website">Website</label>
+            <input type="url" id="website" name="website" placeholder="https://example.com">
+          </div>
+        </div>
+        <button id="save-btn">Save Contact</button>
+        <div id="save-msg"></div>
+        <script>
+          document.getElementById("save-btn").addEventListener("click", function() {
+            document.getElementById("save-msg").style.display = "block";
+            document.getElementById("save-msg").textContent = "Contact saved successfully!";
+          });
+        </script>
+      </body>
+      </html>
+    ' height="280"></iframe>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!--  RESULT BANNER (main page — shown after form interactions)            -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="result-banner"></div>
+
+</body>
+</html>
