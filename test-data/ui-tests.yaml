@@ -1,8 +1,8 @@
 # ╔═══════════════════════════════════════════════════════════════════════════╗
-# ║                     🔌 API TEST DATA — api-tests.yaml                    ║
+# ║                     🖥️  UI TEST DATA — ui-tests.yaml                     ║
 # ╠═══════════════════════════════════════════════════════════════════════════╣
 # ║                                                                          ║
-# ║   This file contains ALL test data for API tests.                        ║
+# ║   This file contains ALL test data for UI tests (Login + Navigation).    ║
 # ║                                                                          ║
 # ║   HOW IT WORKS:                                                          ║
 # ║     • Each test case has a unique XRAY key (PROJ-XXX)                    ║
@@ -21,55 +21,71 @@
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  🔌 API TESTS (TC04 – TC06)
+#  🔐 LOGIN TESTS (TC01 – TC03)
 # ─────────────────────────────────────────────────────────────────────────────
 
-PROJ-104:
+PROJ-101:
   run: yes
-  testCase: "TC04: GET /posts/1 — Should return a valid blog post with correct fields"
-  baseUrl: "https://jsonplaceholder.typicode.com"
-  endpoint: "/posts/1"
-  method: "GET"
-  expectedStatus: 200
-  expectedFields:
-    - "id"
-    - "userId"
-    - "title"
-    - "body"
-  expectedId: 1
+  testCase: "TC01: Valid credentials should log the user in successfully"
+  username: "tomsmith"
+  password: "SuperSecretPassword!"
+  expectedUrlFragment: "/secure"
+  expectedOutcome: "pass"
 
-PROJ-105:
+PROJ-102:
   run: yes
-  testCase: "TC05: POST /posts — Should create a new post and return 201 Created"
-  baseUrl: "https://jsonplaceholder.typicode.com"
-  endpoint: "/posts"
-  method: "POST"
-  expectedStatus: 201
-  payloadTitle: "Demo Post Created by Playwright API Test"
-  payloadBody: "This post was created automatically by our test framework to verify the POST endpoint works correctly."
-  payloadUserId: 1
+  testCase: "TC02: Wrong password should show an error message"
+  username: "tomsmith"
+  password: "WrongPassword"
+  expectedErrorMessage: "Your password is invalid!"
+  expectedUrlFragment: "/login"
+  expectedOutcome: "error"
 
-PROJ-106:
+PROJ-103:
   run: yes
-  testCase: "TC06: GET /users/1 — Should return a complete user profile with nested fields"
-  baseUrl: "https://jsonplaceholder.typicode.com"
-  endpoint: "/users/1"
-  method: "GET"
-  expectedStatus: 200
-  expectedFields:
-    - "id"
-    - "name"
-    - "email"
-    - "phone"
-    - "website"
-    - "address"
-    - "company"
-  expectedId: 1
-  emailContains: "@"
-  addressFields:
-    - "street"
-    - "city"
-    - "zipcode"
-  companyFields:
-    - "name"
-    - "catchPhrase"
+  testCase: "TC03: Empty credentials should show validation errors"
+  username: ""
+  password: ""
+  expectedErrorMessage: "Your username is invalid!"
+  expectedUrlFragment: "/login"
+  expectedOutcome: "error"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  🌐 NAVIGATION TESTS (TC07 – TC11)
+# ─────────────────────────────────────────────────────────────────────────────
+
+PROJ-107:
+  run: yes
+  testCase: "TC07: Navigate to Homepage and verify Playwright title"
+  expectedTitle: "Playwright"
+  expectedHeading: "Playwright enables reliable end-to-end testing"
+  expectedUrl: "playwright.dev"
+
+PROJ-108:
+  run: yes
+  testCase: "TC08: Click Docs tab and verify Installation page title"
+  expectedTitle: "Installation"
+  expectedHeading: "Installation"
+  expectedUrl: "/docs/intro"
+
+PROJ-109:
+  run: yes
+  testCase: "TC09: Click API tab and verify Playwright Library page title"
+  expectedTitle: "Playwright Library"
+  expectedHeading: "Playwright Library"
+  expectedUrl: "/docs/api/class-playwright"
+
+PROJ-110:
+  run: yes
+  testCase: "TC10: Click Community tab and verify Welcome page title"
+  expectedTitle: "Welcome"
+  expectedHeading: "Welcome"
+  expectedUrl: "/community/welcome"
+
+PROJ-111:
+  run: yes
+  testCase: "TC11: Switch to Python language and verify Python page title"
+  expectedTitle: "Playwright Python"
+  expectedHeading: ""
+  expectedUrl: "/python/"

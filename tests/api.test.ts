@@ -49,7 +49,7 @@ import { apiGet, apiPost } from '../utils/api/api-helper';
 import { enhancedLogger } from '../utils/helpers/enhanced-logger';
 
 // Import the data-driven test data loader (reads from YAML files)
-import { getTestData } from '../utils/helpers/test-data-loader';
+import { getTestData, isTestEnabled } from '../utils/helpers/test-data-loader';
 
 // =============================================================================
 // TEST DATA — DATA-DRIVEN (loaded from test-data/api-tests.yaml)
@@ -58,7 +58,8 @@ import { getTestData } from '../utils/helpers/test-data-loader';
 //   test-data/api-tests.yaml
 //
 // Each test reads its data using getTestData('api-tests.yaml', 'PROJ-XXX').
-// To add a new API test, add a PROJ-XXX block in the YAML file.
+// Data fields are accessed directly: td.baseUrl, td.endpoint, etc.
+// To skip a test, set  run: no  next to the PROJ-XXX key in the YAML file.
 // =============================================================================
 const DATA_FILE = 'api-tests.yaml';
 
@@ -93,12 +94,15 @@ test.describe('API Feature Tests', () => {
     async ({ xrayTestKey }) => {
       // ── Load test data from YAML (data-driven) ──
       const td = getTestData(DATA_FILE, 'PROJ-104');
-      const d = td.data as Record<string, unknown>;
-      const baseUrl = d.baseUrl as string;
-      const endpoint = d.endpoint as string;
-      const expectedStatus = d.expectedStatus as number;
-      const expectedFields = d.expectedFields as string[];
-      const validations = d.validations as Record<string, unknown>;
+
+      // ── Skip if run: no in YAML ──
+      if (!isTestEnabled(DATA_FILE, 'PROJ-104')) test.skip();
+
+      const baseUrl = td.baseUrl as string;
+      const endpoint = td.endpoint as string;
+      const expectedStatus = td.expectedStatus as number;
+      const expectedFields = td.expectedFields as string[];
+      const expectedId = td.expectedId as number;
 
       enhancedLogger.section(`▶ Running Test: ${td.testCase} | XRAY: ${xrayTestKey}`);
       enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey}`, xrayTestKey);
@@ -137,10 +141,10 @@ test.describe('API Feature Tests', () => {
       // STEP 4: Validate field values are correct
       // -----------------------------------------------------------------------
       enhancedLogger.step('Step 4: Validate field values are correct', xrayTestKey);
-      expect(response.data!['id']).toBe(validations['id']);
-      expect(typeof response.data!['title']).toBe(validations['titleType']);
+      expect(response.data!['id']).toBe(expectedId);
+      expect(typeof response.data!['title']).toBe('string');
       expect((response.data!['title'] as string).length).toBeGreaterThan(0);
-      expect(typeof response.data!['body']).toBe(validations['bodyType']);
+      expect(typeof response.data!['body']).toBe('string');
       expect((response.data!['body'] as string).length).toBeGreaterThan(0);
 
       enhancedLogger.info(`✅ Post ID: ${response.data!['id']}`, xrayTestKey);
@@ -178,11 +182,18 @@ test.describe('API Feature Tests', () => {
     async ({ xrayTestKey }) => {
       // ── Load test data from YAML (data-driven) ──
       const td = getTestData(DATA_FILE, 'PROJ-105');
-      const d = td.data as Record<string, unknown>;
-      const baseUrl = d.baseUrl as string;
-      const endpoint = d.endpoint as string;
-      const expectedStatus = d.expectedStatus as number;
-      const payload = d.payload as Record<string, unknown>;
+
+      // ── Skip if run: no in YAML ──
+      if (!isTestEnabled(DATA_FILE, 'PROJ-105')) test.skip();
+
+      const baseUrl = td.baseUrl as string;
+      const endpoint = td.endpoint as string;
+      const expectedStatus = td.expectedStatus as number;
+      const payload = {
+        title:  td.payloadTitle as string,
+        body:   td.payloadBody as string,
+        userId: td.payloadUserId as number,
+      };
 
       enhancedLogger.section(`▶ Running Test: ${td.testCase} | XRAY: ${xrayTestKey}`);
       enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey}`, xrayTestKey);
@@ -259,13 +270,18 @@ test.describe('API Feature Tests', () => {
     async ({ xrayTestKey }) => {
       // ── Load test data from YAML (data-driven) ──
       const td = getTestData(DATA_FILE, 'PROJ-106');
-      const d = td.data as Record<string, unknown>;
-      const baseUrl = d.baseUrl as string;
-      const endpoint = d.endpoint as string;
-      const expectedStatus = d.expectedStatus as number;
-      const expectedFields = d.expectedFields as string[];
-      const validations = d.validations as Record<string, unknown>;
-      const nestedFields = (validations['nestedFields'] ?? {}) as Record<string, string[]>;
+
+      // ── Skip if run: no in YAML ──
+      if (!isTestEnabled(DATA_FILE, 'PROJ-106')) test.skip();
+
+      const baseUrl = td.baseUrl as string;
+      const endpoint = td.endpoint as string;
+      const expectedStatus = td.expectedStatus as number;
+      const expectedFields = td.expectedFields as string[];
+      const expectedId = td.expectedId as number;
+      const emailContains = td.emailContains as string;
+      const addressFields = td.addressFields as string[];
+      const companyFields = td.companyFields as string[];
 
       enhancedLogger.section(`▶ Running Test: ${td.testCase} | XRAY: ${xrayTestKey}`);
       enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey}`, xrayTestKey);
@@ -297,15 +313,15 @@ test.describe('API Feature Tests', () => {
       expect(response.data).not.toBeNull();
 
       const user = response.data!;
-      expect(user['id']).toBe(validations['id']);
+      expect(user['id']).toBe(expectedId);
 
       for (const field of expectedFields) {
         expect(user).toHaveProperty(field);
       }
 
       // Email format check
-      if (validations['emailContains']) {
-        expect(user['email'] as string).toContain(validations['emailContains'] as string);
+      if (emailContains) {
+        expect(user['email'] as string).toContain(emailContains);
       }
 
       enhancedLogger.info(`✅ User ID:    ${user['id']}`, xrayTestKey);
@@ -314,18 +330,21 @@ test.describe('API Feature Tests', () => {
       enhancedLogger.info(`✅ Phone:      ${user['phone']}`, xrayTestKey);
 
       // -----------------------------------------------------------------------
-      // STEP 4: Validate nested objects (from YAML nestedFields config)
+      // STEP 4: Validate nested objects (address and company from YAML)
       // -----------------------------------------------------------------------
-      let stepNum = 4;
-      for (const [parentField, childFields] of Object.entries(nestedFields)) {
-        enhancedLogger.step(`Step ${stepNum}: Validate nested ${parentField} object`, xrayTestKey);
-        const parentObj = user[parentField] as Record<string, unknown>;
-        for (const child of childFields) {
-          expect(parentObj).toHaveProperty(child);
-        }
-        enhancedLogger.info(`✅ ${parentField} fields validated: ${childFields.join(', ')}`, xrayTestKey);
-        stepNum++;
+      enhancedLogger.step('Step 4: Validate nested address object', xrayTestKey);
+      const addressObj = user['address'] as Record<string, unknown>;
+      for (const child of addressFields) {
+        expect(addressObj).toHaveProperty(child);
       }
+      enhancedLogger.info(`✅ address fields validated: ${addressFields.join(', ')}`, xrayTestKey);
+
+      enhancedLogger.step('Step 5: Validate nested company object', xrayTestKey);
+      const companyObj = user['company'] as Record<string, unknown>;
+      for (const child of companyFields) {
+        expect(companyObj).toHaveProperty(child);
+      }
+      enhancedLogger.info(`✅ company fields validated: ${companyFields.join(', ')}`, xrayTestKey);
 
       enhancedLogger.pass(`TC06 passed — GET ${endpoint} returned full user profile (${response.durationMs}ms)`, xrayTestKey);
     }

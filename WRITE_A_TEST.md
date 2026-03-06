@@ -545,22 +545,28 @@ test.describe('Your Feature Name', () => {                          // ← CHANG
 > without editing TypeScript code:
 >
 > ```typescript
-> import { getTestData } from '../utils/helpers/test-data-loader';
+> import { getTestData, isTestEnabled } from '../utils/helpers/test-data-loader';
 >
 > // In your test:
-> const td = getTestData('login-tests.yaml', 'PROJ-101');
-> await page.getByLabel('Username').fill(td.data.username as string);
-> await page.getByLabel('Password').fill(td.data.password as string);
+> const td = getTestData('ui-tests.yaml', 'PROJ-101');
+> if (!isTestEnabled('ui-tests.yaml', 'PROJ-101')) test.skip(); // skip if run: no
+> await page.getByLabel('Username').fill(td.username as string);
+> await page.getByLabel('Password').fill(td.password as string);
 > ```
 >
-> Add your data to `test-data/your-feature.yaml`:
+> Add your data to `test-data/ui-tests.yaml` (or `test-data/api-tests.yaml`):
 > ```yaml
 > PROJ-101:
+>   run: yes                          # ← yes = run, no = skip
 >   testCase: "TC01: Your test name"
->   data:
->     username: "your-value"
->     password: "your-password"
+>   username: "your-value"            # ← any data fields you need
+>   password: "your-password"
+>   expectedUrl: "/dashboard"
 > ```
+>
+> **Selective Execution:** Set `run: no` next to any test case in the YAML file
+> to skip it. Set `run: yes` to include it. This lets you quickly run just the
+> tests you want without modifying any TypeScript code.
 
 ---
 

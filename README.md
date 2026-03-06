@@ -116,9 +116,8 @@ project-root/
 │   └── index.ts                  ← Barrel file (import anything from '../utils')
 │
 ├── test-data/                    ← YAML TEST DATA (data-driven — tests read inputs from here)
-│   ├── login-tests.yaml          ←   Login test data: credentials, expected URLs, error messages
-│   ├── api-tests.yaml            ←   API test data: endpoints, payloads, expected status codes
-│   └── navigation-tests.yaml    ←   Navigation test data: expected titles, headings, URLs
+│   ├── ui-tests.yaml             ←   UI test data: Login + Navigation (credentials, URLs, expected results)
+│   └── api-tests.yaml            ←   API test data: endpoints, payloads, expected status codes
 │
 ├── config/
 │   └── environment.ts            ← Reads .env file, exports clean config object
@@ -480,25 +479,26 @@ npx playwright test tests/your-feature.test.ts
 
 ### 💡 Data-Driven Tip: Load Test Data from YAML
 
-Instead of hardcoding test values (credentials, URLs, expected results), load them from external YAML files in `test-data/`. This makes tests reusable — change data without modifying code:
+Instead of hardcoding test values (credentials, URLs, expected results), load them from external YAML files in `test-data/`. This makes tests reusable — change data without modifying code. You can also selectively run/skip tests using the `run: yes/no` toggle:
 
 ```typescript
-import { getTestData } from '../utils/helpers/test-data-loader';
+import { getTestData, isTestEnabled } from '../utils/helpers/test-data-loader';
 
 // In your test:
-const td = getTestData('login-tests.yaml', 'PROJ-101');
-await page.getByLabel('Username').fill(td.data.username as string);
-await page.getByLabel('Password').fill(td.data.password as string);
+const td = getTestData('ui-tests.yaml', 'PROJ-101');
+if (!isTestEnabled('ui-tests.yaml', 'PROJ-101')) test.skip(); // skip if run: no
+await page.getByLabel('Username').fill(td.username as string);
+await page.getByLabel('Password').fill(td.password as string);
 ```
 
-YAML file structure (`test-data/login-tests.yaml`):
+YAML file structure (`test-data/ui-tests.yaml`):
 ```yaml
 PROJ-101:
+  run: yes                          # ← yes = run, no = skip
   testCase: "TC01: Valid login"
-  data:
-    username: "tomsmith"
-    password: "SuperSecretPassword!"
-    expectedUrlFragment: "/secure"
+  username: "tomsmith"              # ← flat data fields (no nesting)
+  password: "SuperSecretPassword!"
+  expectedUrlFragment: "/secure"
 ```
 
 ---

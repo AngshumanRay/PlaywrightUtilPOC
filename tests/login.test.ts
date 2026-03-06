@@ -50,21 +50,21 @@ import { LoginPage } from '../pages/LoginPage';
 import { enhancedLogger } from '../utils/helpers/enhanced-logger';
 
 // Import the data-driven test data loader (reads from YAML files)
-import { getTestData } from '../utils/helpers/test-data-loader';
+import { getTestData, isTestEnabled } from '../utils/helpers/test-data-loader';
 
 // =============================================================================
-// TEST DATA — DATA-DRIVEN (loaded from test-data/login-tests.yaml)
+// TEST DATA — DATA-DRIVEN (loaded from test-data/ui-tests.yaml)
 // =============================================================================
 // All test inputs (credentials, expected results) are stored EXTERNALLY in:
-//   test-data/login-tests.yaml
+//   test-data/ui-tests.yaml
 //
-// Each test case reads its data using getTestData('login-tests.yaml', 'PROJ-XXX').
-// This makes tests reusable — change data without modifying code.
+// Each test case reads its data using getTestData('ui-tests.yaml', 'PROJ-XXX').
+// Data fields are accessed directly: td.username, td.password, etc.
 //
-// To update credentials or expected messages, edit test-data/login-tests.yaml.
-// To add a new login test case, add a PROJ-XXX block in the YAML file.
+// To update credentials or expected messages, edit test-data/ui-tests.yaml.
+// To skip a test, set  run: no  next to the PROJ-XXX key in the YAML file.
 // =============================================================================
-const DATA_FILE = 'login-tests.yaml';
+const DATA_FILE = 'ui-tests.yaml';
 
 // =============================================================================
 // TEST GROUP: Login Feature Tests
@@ -101,6 +101,10 @@ test.describe('Login Feature Tests', () => {
 
       // ── Load test data from YAML (data-driven) ──
       const td = getTestData(DATA_FILE, 'PROJ-101');
+
+      // ── Skip if run: no in YAML ──
+      if (!isTestEnabled(DATA_FILE, 'PROJ-101')) test.skip();
+
       enhancedLogger.section(`▶ Running Test: ${td.testCase} | XRAY: ${xrayTestKey}`);
       enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey}`, xrayTestKey);
 
@@ -112,13 +116,13 @@ test.describe('Login Feature Tests', () => {
 
       // Step 2: Perform login with credentials from YAML
       enhancedLogger.step('Step 2: Enter valid credentials and submit', xrayTestKey);
-      await loginPage.login(td.data.username as string, td.data.password as string);
+      await loginPage.login(td.username as string, td.password as string);
 
       // Step 3: Verify login was successful
       enhancedLogger.step('Step 3: Verify user is now on the Secure Area page', xrayTestKey);
       await loginPage.verifySuccessfulLogin();
 
-      expect(loginPage.getCurrentUrl()).toContain(td.data.expectedUrlFragment as string);
+      expect(loginPage.getCurrentUrl()).toContain(td.expectedUrlFragment as string);
 
       enhancedLogger.pass(`TC01 passed — User logged in successfully`, xrayTestKey);
     }
@@ -151,6 +155,10 @@ test.describe('Login Feature Tests', () => {
 
       // ── Load test data from YAML (data-driven) ──
       const td = getTestData(DATA_FILE, 'PROJ-102');
+
+      // ── Skip if run: no in YAML ──
+      if (!isTestEnabled(DATA_FILE, 'PROJ-102')) test.skip();
+
       enhancedLogger.section(`▶ Running Test: ${td.testCase} | XRAY: ${xrayTestKey}`);
       enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey}`, xrayTestKey);
 
@@ -160,13 +168,13 @@ test.describe('Login Feature Tests', () => {
       await loginPage.navigateToLoginPage();
 
       enhancedLogger.step('Step 2: Enter valid username but wrong password', xrayTestKey);
-      await loginPage.login(td.data.username as string, td.data.password as string);
+      await loginPage.login(td.username as string, td.password as string);
 
       enhancedLogger.step('Step 3: Verify error message is displayed', xrayTestKey);
-      await loginPage.verifyLoginErrorMessage(td.data.expectedErrorMessage as string);
+      await loginPage.verifyLoginErrorMessage(td.expectedErrorMessage as string);
 
       enhancedLogger.step('Step 4: Verify user is still on the login page', xrayTestKey);
-      expect(loginPage.getCurrentUrl()).toContain(td.data.expectedUrlFragment as string);
+      expect(loginPage.getCurrentUrl()).toContain(td.expectedUrlFragment as string);
 
       enhancedLogger.pass(`TC02 passed — Error message shown for wrong password`, xrayTestKey);
     }
@@ -197,6 +205,10 @@ test.describe('Login Feature Tests', () => {
 
       // ── Load test data from YAML (data-driven) ──
       const td = getTestData(DATA_FILE, 'PROJ-103');
+
+      // ── Skip if run: no in YAML ──
+      if (!isTestEnabled(DATA_FILE, 'PROJ-103')) test.skip();
+
       enhancedLogger.section(`▶ Running Test: ${td.testCase} | XRAY: ${xrayTestKey}`);
       enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey}`, xrayTestKey);
 
@@ -209,10 +221,10 @@ test.describe('Login Feature Tests', () => {
       await loginPage.clickLoginButton();
 
       enhancedLogger.step('Step 3: Verify validation flash message is shown', xrayTestKey);
-      await loginPage.verifyLoginErrorMessage(td.data.expectedErrorMessage as string);
+      await loginPage.verifyLoginErrorMessage(td.expectedErrorMessage as string);
 
       const currentUrl = loginPage.getCurrentUrl();
-      expect(currentUrl).toContain(td.data.expectedUrlFragment as string);
+      expect(currentUrl).toContain(td.expectedUrlFragment as string);
 
       enhancedLogger.info(`Validation confirmed: empty credentials rejected, URL is still: ${currentUrl}`, xrayTestKey);
 

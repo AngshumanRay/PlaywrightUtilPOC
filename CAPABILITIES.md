@@ -1628,12 +1628,11 @@ The framework will show your tool in the Utility Status Dashboard:
 | **`utils/security/crypto-helper.ts`** | AES-256 encrypt/decrypt passwords and stored secrets |
 | **`utils/helpers/logger.ts`** | Color-coded terminal logging |
 | **`utils/helpers/enhanced-logger.ts`** | Structured data collector for the HTML report (logs, perf, a11y) + PASS/FAIL log summary |
-| **`utils/helpers/test-data-loader.ts`** | Reads test input data from YAML files in `test-data/` (data-driven) |
+| **`utils/helpers/test-data-loader.ts`** | Reads test input data from YAML files in `test-data/`; supports `run: yes/no` selective execution |
 | **`utils/helpers/screenshot.ts`** | Captures browser screenshots |
 | **`utils/index.ts`** | Barrel file — import anything from one place |
-| **`test-data/login-tests.yaml`** | Login test data: credentials, expected URLs, error messages |
-| **`test-data/api-tests.yaml`** | API test data: endpoints, payloads, expected status codes |
-| **`test-data/navigation-tests.yaml`** | Navigation test data: expected titles, headings, URLs |
+| **`test-data/ui-tests.yaml`** | UI test data: Login + Navigation (credentials, URLs, expected results, `run: yes/no` toggle) |
+| **`test-data/api-tests.yaml`** | API test data: endpoints, payloads, expected status codes, `run: yes/no` toggle |
 | **`logs/test-run-*.log`** | Per-run log files with PASS/FAIL summary prepended at the top |
 | **`playwright.config.ts`** | Playwright settings (browsers, timeouts, retries) |
 | **`.env` timeouts** | `TEST_TIMEOUT`, `EXPECT_TIMEOUT`, `ACTION_TIMEOUT`, `NAVIGATION_TIMEOUT` |

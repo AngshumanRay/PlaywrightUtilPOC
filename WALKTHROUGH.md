@@ -718,9 +718,9 @@ reports/execution-report-2026-03-03.html
 | `utils/reporting/report-generator.ts` | The "publisher" — builds the HTML report with charts, screenshots, and step logs |
 | `utils/helpers/enhanced-logger.ts` | The "data collector" — gathers structured log/perf/a11y data + PASS/FAIL log summary |
 | `utils/helpers/logger.ts` | The "announcer" — prints formatted, coloured messages in the terminal |
-| `utils/helpers/test-data-loader.ts` | The "librarian" — reads test input data from YAML files so tests don't hardcode values |
+| `utils/helpers/test-data-loader.ts` | The "librarian" — reads test input data from YAML files so tests don't hardcode values; supports `run: yes/no` toggle |
 | `utils/helpers/screenshot.ts` | The "photographer" — captures a browser screenshot when a test fails |
-| `test-data/*.yaml` | The "answer sheets" — external YAML files with test inputs (usernames, URLs, expected results) |
+| `test-data/*.yaml` | The "answer sheets" — 2 YAML files (`ui-tests.yaml` + `api-tests.yaml`) with test inputs, expected results, and `run: yes/no` toggle |
 | `logs/test-run-*.log` | The "diary" — log file for each run, with a PASS/FAIL summary at the very top |
 | `tests/global-setup.ts` | The "pre-flight checklist" — runs once before any test (auth, fetch, create execution) |
 | `tests/global-teardown.ts` | The "cleanup crew" — runs once after all tests (uploads results, generates report) |
