@@ -555,8 +555,18 @@ Follow these exact steps to add YOUR own tests:
 □ Step 10: Open the HTML report and verify everything looks right
 ```
 
+> 💡 **Testing a page with iframes?** (Salesforce, ServiceNow, Workday)
+> See `tests/salesforce-iframe.test.ts` for working examples and
+> [WRITE_A_TEST.md → Iframe Testing](WRITE_A_TEST.md#️-iframe-testing--a-beginners-guide)
+> for the complete beginner's guide. The 3-step pattern:
+> ```typescript
+> const basePage = new BasePage(page);
+> const frame = basePage.getIframe('#your-iframe');
+> await basePage.fillInIframe(frame, '#field', 'value', 'My Field');
+> ```
+
 ---
 
-*Last updated: 4 March 2026*
+*Last updated: 6 March 2026*
 *Framework: Playwright AutoAgent – AI Automation Framework*
-*Tests: 3 Login (UI) + 3 API (REST) + 5 Navigation (UI) = 11 total*
+*Tests: 3 Login (UI) + 3 API (REST) + 5 Navigation (UI) + 2 Iframe (UI) = 13 total*

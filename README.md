@@ -22,16 +22,18 @@ open reports/execution-report-*.html   # View the visual report in your browser
 
 | Document | What You'll Learn | Best For |
 |----------|-------------------|----------|
-| **[README.md](README.md)** (you're here) | Setup, install, run commands, troubleshooting | **Everyone — start here** |
-| **[WRITE_A_TEST.md](WRITE_A_TEST.md)** | Copy-paste guide to write your first test | **Non-technical users** |
-| **[CAPABILITIES.md](CAPABILITIES.md)** | Every feature explained in plain English | **New team members exploring the framework** |
+| **[README.md](README.md)** (you're here) | Setup, install, run commands, iframe guide, troubleshooting | **Everyone — start here** |
+| **[WRITE_A_TEST.md](WRITE_A_TEST.md)** | Copy-paste guide to write your first test (includes iframe section) | **Non-technical users** |
+| **[CAPABILITIES.md](CAPABILITIES.md)** | Every feature explained in plain English (includes iframe guide) | **New team members exploring the framework** |
 | **[WALKTHROUGH.md](WALKTHROUGH.md)** | End-to-end XRAY flow with diagrams | **Anyone learning how JIRA reporting works** |
 | **[HOWTO_5_NAVIGATION_TESTS.md](HOWTO_5_NAVIGATION_TESTS.md)** | Step-by-step guide: how the 5 navigation tests were built | **Anyone adding new test suites** |
 | **[docs/RUN_REPORT_*.md](docs/)** | Auto-generated run reports | Anyone reviewing past test runs |
 
-> 💡 **Not a developer?** Read this README for setup, then go straight to **[WRITE_A_TEST.md](WRITE_A_TEST.md)** — it explains how to write a test with zero coding knowledge.
+> 💡 **Not a developer?** Read this README for setup, then go straight to **[WRITE_A_TEST.md](WRITE_A_TEST.md)** — it explains how to write a test with zero coding knowledge, including iframe tests.
 > 
 > 💡 **Developer?** After setup, read **[CAPABILITIES.md](CAPABILITIES.md)** to see everything the framework can do.
+>
+> 💡 **Need to test iframes?** (Salesforce, ServiceNow, Workday) Jump to the [Iframe Testing Guide](#️-iframe-testing-guide--how-to-test-inside-iframes) section in this file, or see the detailed guide in [WRITE_A_TEST.md](WRITE_A_TEST.md#️-iframe-testing--a-beginners-guide).
 
 ---
 
@@ -48,8 +50,9 @@ open reports/execution-report-*.html   # View the visual report in your browser
 9. [How the XRAY Integration Works](#how-the-xray-integration-works)
 10. [Adding New Tests](#adding-new-tests)
 11. [Adding New Page Objects](#adding-new-page-objects)
-12. [Troubleshooting](#troubleshooting)
-13. [Glossary (Key Terms)](#glossary)
+12. [🖼️ Iframe Testing Guide](#️-iframe-testing-guide--how-to-test-inside-iframes)
+13. [Troubleshooting](#troubleshooting)
+14. [Glossary (Key Terms)](#glossary)
 
 ---
 
@@ -549,6 +552,123 @@ await dashboardPage.verifyDashboardLoaded();
 
 ---
 
+## 🖼️ Iframe Testing Guide — How to Test Inside Iframes
+
+> **What is an iframe?** An `<iframe>` is a "page inside a page." Enterprise apps like **Salesforce, ServiceNow, and Workday** embed forms and editors inside iframes. Playwright **cannot** see elements inside an iframe with normal `page.locator()` — you must use our iframe helpers.
+
+This framework provides **10 generic iframe helper methods** in `BasePage.ts` so you never have to manually "switch" in and out of frames like you would in Selenium.
+
+### The Core Pattern (3 Steps — That's It)
+
+```typescript
+import { BasePage } from '../pages/BasePage';
+
+// Step 1: Create a BasePage
+const basePage = new BasePage(page);
+
+// Step 2: Get the iframe handle (do this ONCE per iframe)
+const frame = basePage.getIframe('#my-iframe');
+
+// Step 3: Use helpers — NO switching, NO frame management
+await basePage.fillInIframe(frame, '#name', 'John', 'Name field');
+await basePage.clickInIframe(frame, '.save-btn', 'Save button');
+await basePage.selectInIframe(frame, '#country', 'India', 'Country dropdown');
+await basePage.assertTextInIframe(frame, '.msg', 'Saved!', 'Success message');
+
+// Back to main page? Just use page.locator() — no switch needed
+await expect(page.locator('#heading')).toBeVisible();
+```
+
+### All 10 Iframe Helper Methods
+
+| Method | What It Does | Example |
+|--------|-------------|--------|
+| `getIframe(selector)` | Get an iframe handle | `const frame = basePage.getIframe('#myFrame')` |
+| `getNestedIframe(outer, inner)` | Get an iframe inside another iframe | `const frame = basePage.getNestedIframe('#outer', '#inner')` |
+| `locatorInIframe(frame, selector)` | Get a Locator inside an iframe | `const el = basePage.locatorInIframe(frame, 'h1')` |
+| `fillInIframe(frame, selector, text, desc)` | Type into an input inside iframe | `await basePage.fillInIframe(frame, '#email', 'a@b.com', 'Email')` |
+| `clickInIframe(frame, selector, desc)` | Click a button/link inside iframe | `await basePage.clickInIframe(frame, '.btn', 'Submit')` |
+| `selectInIframe(frame, selector, value, desc)` | Pick a dropdown option inside iframe | `await basePage.selectInIframe(frame, '#dd', 'Option', 'DD')` |
+| `typeInIframe(frame, selector, text, desc)` | Type into rich text editor inside iframe | `await basePage.typeInIframe(frame, '#body', 'Hello', 'Editor')` |
+| `assertTextInIframe(frame, selector, text, desc)` | Verify text inside iframe | `await basePage.assertTextInIframe(frame, '.msg', 'OK', 'Msg')` |
+| `assertVisibleInIframe(frame, selector, desc)` | Verify element visible inside iframe | `await basePage.assertVisibleInIframe(frame, '#name', 'Name')` |
+| `getIframeFieldValue(frame, selector)` | Read input value inside iframe | `const val = await basePage.getIframeFieldValue(frame, '#name')` |
+| `getIframeTextContent(frame, selector)` | Read text content inside iframe | `const txt = await basePage.getIframeTextContent(frame, '.label')` |
+
+### Working with Multiple Iframes
+
+```typescript
+// Get handles for BOTH iframes — hold them simultaneously
+const leadFrame    = basePage.getIframe('#lead-iframe');
+const contactFrame = basePage.getIframe('#contact-iframe');
+
+// Fill in iframe #1
+await basePage.fillInIframe(leadFrame, '#name', 'John', 'Name');
+
+// Jump to iframe #2 — just use the other handle (NO switchToDefault!)
+await basePage.fillInIframe(contactFrame, '#city', 'Mumbai', 'City');
+
+// Jump BACK to iframe #1 — just use the first handle again
+const name = await basePage.getIframeFieldValue(leadFrame, '#name');
+expect(name).toBe('John');
+
+// Main page — just use page.locator() as normal
+await expect(page.locator('#title')).toHaveText('My App');
+```
+
+### Complete Iframe Test Template — Copy & Paste
+
+Save this as `tests/your-iframe-test.test.ts`:
+
+```typescript
+import path from 'path';
+import { test, expect } from './xray-test-fixture';
+import { BasePage } from '../pages/BasePage';
+import { enhancedLogger } from '../utils/helpers/enhanced-logger';
+import { getTestData, isTestEnabled } from '../utils/helpers/test-data-loader';
+
+const DATA_FILE = 'ui-tests.yaml';
+
+test.describe('Your Iframe Tests', () => {
+
+  test('TC##: Fill form fields inside an iframe', {
+    annotation: { type: 'xray', description: 'PROJ-XXX' },
+  }, async ({ page, xrayTestKey }) => {
+    const td = getTestData(DATA_FILE, 'PROJ-XXX');
+    if (!isTestEnabled(DATA_FILE, 'PROJ-XXX')) test.skip();
+
+    const basePage = new BasePage(page);
+
+    // Navigate to your page
+    enhancedLogger.step('Step 1: Navigate to the page', xrayTestKey);
+    await page.goto('https://your-app.com/record');        // ← CHANGE
+
+    // Get the iframe
+    enhancedLogger.step('Step 2: Get the iframe handle', xrayTestKey);
+    const frame = basePage.getIframe('#your-iframe');       // ← CHANGE
+
+    // Fill fields inside the iframe
+    enhancedLogger.step('Step 3: Fill form fields', xrayTestKey);
+    await basePage.fillInIframe(frame, '#field1', td.value1 as string, 'Field 1');  // ← CHANGE
+    await basePage.fillInIframe(frame, '#field2', td.value2 as string, 'Field 2');  // ← CHANGE
+
+    // Verify
+    enhancedLogger.step('Step 4: Verify', xrayTestKey);
+    const actual = await basePage.getIframeFieldValue(frame, '#field1');
+    expect(actual).toBe(td.value1);
+
+    enhancedLogger.pass('TC## passed', xrayTestKey);
+  });
+});
+```
+
+> 📖 **See real working examples:** `tests/salesforce-iframe.test.ts` (TC12 + TC13)
+> 📖 **All iframe helpers:** `pages/BasePage.ts` → search for "IFRAME HELPERS"
+> 📖 **Page Object example:** `pages/SalesforceIframePage.ts`
+> 📖 **HTML fixture:** `test-fixtures/iframe-form.html`
+
+---
+
 ## Troubleshooting
 
 ### ❌ "Missing required environment variable: JIRA_BASE_URL"
@@ -608,6 +728,8 @@ npm run test:debug
 | **Sprint** | A fixed work period (usually 2 weeks) in Scrum/Agile methodology |
 | **CI/CD** | Continuous Integration/Delivery — automated pipelines that run tests |
 | **Fixture** | Reusable setup/teardown logic injected into tests automatically |
+| **Iframe** | A "page inside a page" — enterprise apps (Salesforce, ServiceNow) use them to embed forms |
+| **FrameLocator** | Playwright's way to find and interact with elements inside an iframe |
 | **Headless** | Running the browser without a visible window (faster) |
 | **Headed** | Running the browser WITH a visible window (useful for debugging) |
 | **a11y** | Short for "accessibility" — checks that the page is usable for everyone |
@@ -616,7 +738,7 @@ npm run test:debug
 
 ---
 
-*Last updated: 4 March 2026*
+*Last updated: 6 March 2026*
 *Framework: Playwright AutoAgent – AI Automation Framework*
-*Tests: 3 Login (UI) + 3 API (REST) + 5 Navigation (UI) = 11 total*
+*Tests: 3 Login (UI) + 3 API (REST) + 5 Navigation (UI) + 2 Iframe (UI) = 13 total*
 *XRAY: Test Set = manual setup, Test Execution onward = fully automated*

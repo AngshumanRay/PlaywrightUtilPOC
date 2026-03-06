@@ -17,6 +17,9 @@
    XRAY ID, and the test steps                      (5–10 minutes)
 4. Run: npm test                                    (30 seconds)
 5. Done! Open the HTML report to see your result    ✅
+
+🖼️ Testing inside IFRAMES? (Salesforce, ServiceNow, etc.)
+   Jump to: "Iframe Testing — A Beginner's Guide" section below
 ```
 
 ---
@@ -570,6 +573,233 @@ test.describe('Your Feature Name', () => {                          // ← CHANG
 
 ---
 
+## 🖼️ Iframe Testing — A Beginner's Guide
+
+### What Is an Iframe? (Explained Simply)
+
+An **iframe** is a "page inside a page." Think of it like a **picture frame on a wall** — the wall is your main web page, and the picture inside the frame is a separate mini-page with its own content.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  MAIN PAGE (the "wall")                                         │
+│                                                                  │
+│  Page Title: "New Lead"    ← You CAN see this with page.locator │
+│                                                                  │
+│  ┌────────────────────────────────────────────────────────┐      │
+│  │  IFRAME (the "picture frame")                          │      │
+│  │                                                        │      │
+│  │  First Name: [________]  ← You CANNOT see this with   │      │
+│  │  Last Name:  [________]    page.locator!               │      │
+│  │  Email:      [________]    You need iframe helpers.    │      │
+│  │  [Save]                                                │      │
+│  │                                                        │      │
+│  └────────────────────────────────────────────────────────┘      │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Why does this matter?**
+- **Salesforce**, **ServiceNow**, **Workday** and many enterprise apps put their forms inside iframes
+- Normal Playwright commands like `page.getByLabel('Name')` **cannot see** elements inside iframes
+- You need to "enter" the iframe first — our helpers make this easy
+
+### The Normal Test vs Iframe Test — Side by Side
+
+| Normal Test (no iframe) | Iframe Test |
+|---|---|
+| `await page.getByLabel('Name').fill('John');` | `const frame = basePage.getIframe('#my-iframe');` |
+| | `await basePage.fillInIframe(frame, '#name', 'John', 'Name');` |
+| `await page.getByRole('button').click();` | `await basePage.clickInIframe(frame, '.btn', 'Save');` |
+| `await expect(page.getByText('OK')).toBeVisible();` | `await basePage.assertTextInIframe(frame, '.msg', 'OK', 'Msg');` |
+
+> **Key difference:** You get the iframe handle ONCE, then pass it to every helper. That's it!
+
+### Step-by-Step: How to Write an Iframe Test
+
+#### Step 1: Create your test file
+
+Create a new file `tests/my-iframe-test.test.ts`. The `.test.ts` ending is required.
+
+#### Step 2: Paste this template
+
+```typescript
+import path from 'path';
+import { test, expect } from './xray-test-fixture';
+import { BasePage } from '../pages/BasePage';
+import { enhancedLogger } from '../utils/helpers/enhanced-logger';
+import { getTestData, isTestEnabled } from '../utils/helpers/test-data-loader';
+
+const DATA_FILE = 'ui-tests.yaml';
+
+test.describe('My Iframe Tests', () => {                                    // ← CHANGE
+
+  test('TC14: Fill a form inside an iframe', {                              // ← CHANGE
+    annotation: { type: 'xray', description: 'PROJ-114' },                 // ← CHANGE
+  }, async ({ page, xrayTestKey }) => {
+
+    const td = getTestData(DATA_FILE, 'PROJ-114');                          // ← CHANGE
+    if (!isTestEnabled(DATA_FILE, 'PROJ-114')) test.skip();                 // ← CHANGE
+
+    const basePage = new BasePage(page);
+
+    // Step 1: Go to the page
+    enhancedLogger.step('Step 1: Navigate to the page', xrayTestKey);
+    await page.goto('https://your-app.com/page');                           // ← CHANGE
+
+    // Step 2: Get the iframe handle
+    enhancedLogger.step('Step 2: Get iframe handle', xrayTestKey);
+    const frame = basePage.getIframe('#your-iframe-id');                    // ← CHANGE
+
+    // Step 3: Fill fields inside the iframe
+    enhancedLogger.step('Step 3: Fill fields inside iframe', xrayTestKey);
+    await basePage.fillInIframe(frame, '#firstName', td.firstName as string, 'First Name');
+    await basePage.fillInIframe(frame, '#lastName',  td.lastName  as string, 'Last Name');
+
+    // Step 4: Click a button inside the iframe
+    enhancedLogger.step('Step 4: Click Save inside iframe', xrayTestKey);
+    await basePage.clickInIframe(frame, '#save-btn', 'Save button');
+
+    // Step 5: Verify result inside the iframe
+    enhancedLogger.step('Step 5: Verify success message', xrayTestKey);
+    await basePage.assertTextInIframe(frame, '.success', 'Saved!', 'Success message');
+
+    // Step 6: Verify main page (outside iframe — normal Playwright)
+    enhancedLogger.step('Step 6: Verify main page', xrayTestKey);
+    await expect(page.locator('#page-title')).toBeVisible();
+
+    enhancedLogger.pass('TC14 passed — form filled inside iframe', xrayTestKey);
+  });
+});
+```
+
+#### Step 3: Add your test data to `test-data/ui-tests.yaml`
+
+```yaml
+PROJ-114:
+  run: yes
+  testCase: "TC14: Fill a form inside an iframe"
+  firstName: "John"
+  lastName: "Doe"
+```
+
+#### Step 4: Run your test
+
+```bash
+npx playwright test tests/my-iframe-test.test.ts
+```
+
+### How to Find the Iframe Selector
+
+This is the most common question. Here's how to find it:
+
+1. Open your app in **Chrome**
+2. **Right-click** on the form/content that's inside the iframe
+3. Click **"Inspect"** — Chrome DevTools opens
+4. **Look upward** in the HTML tree until you see an `<iframe>` tag
+5. Note down its **id**, **name**, or **title**:
+
+```html
+<!-- These are all valid iframe selectors -->
+<iframe id="myFrame">           →  '#myFrame'
+<iframe name="editFrame">       →  'iframe[name="editFrame"]'
+<iframe title="New Lead">       →  'iframe[title="New Lead"]'
+<iframe class="editor-frame">   →  'iframe.editor-frame'
+```
+
+6. Use it like this:
+```typescript
+const frame = basePage.getIframe('#myFrame');
+// or
+const frame = basePage.getIframe('iframe[name="editFrame"]');
+// or
+const frame = basePage.getIframe('iframe[title="New Lead"]');
+```
+
+### Iframe Action Cheat Sheet — Copy & Paste
+
+```typescript
+// ── Get an iframe ──
+const frame = basePage.getIframe('#iframe-id');
+
+// ── Get iframe inside another iframe (nested) ──
+const innerFrame = basePage.getNestedIframe('#outer-iframe', '#inner-iframe');
+
+// ── Fill a text field inside iframe ──
+await basePage.fillInIframe(frame, '#field-id', 'value', 'Field Name');
+
+// ── Click a button inside iframe ──
+await basePage.clickInIframe(frame, '#button-id', 'Button Name');
+
+// ── Select from dropdown inside iframe ──
+await basePage.selectInIframe(frame, '#dropdown-id', 'Option Text', 'Dropdown Name');
+
+// ── Type into rich text editor inside iframe (TinyMCE, CKEditor) ──
+await basePage.typeInIframe(frame, '#editor-body', 'My text', 'Editor');
+
+// ── Check text appears inside iframe ──
+await basePage.assertTextInIframe(frame, '#message', 'Success!', 'Status Message');
+
+// ── Check element is visible inside iframe ──
+await basePage.assertVisibleInIframe(frame, '#save-btn', 'Save Button');
+
+// ── Read a field value inside iframe ──
+const value = await basePage.getIframeFieldValue(frame, '#field-id');
+
+// ── Read text content inside iframe ──
+const text = await basePage.getIframeTextContent(frame, '.label');
+```
+
+### Working with Multiple Iframes (Salesforce Pattern)
+
+Salesforce record pages often have **two or more iframes** on the same page.
+Here's how to work with both:
+
+```typescript
+// Get BOTH iframe handles at once
+const leadFrame    = basePage.getIframe('#lead-iframe');
+const contactFrame = basePage.getIframe('#contact-iframe');
+
+// Fill fields in iframe #1
+await basePage.fillInIframe(leadFrame, '#name', 'John', 'Name');
+await basePage.fillInIframe(leadFrame, '#email', 'j@test.com', 'Email');
+
+// Jump to iframe #2 — just use the other handle (NO switching needed!)
+await basePage.fillInIframe(contactFrame, '#city', 'Mumbai', 'City');
+await basePage.selectInIframe(contactFrame, '#country', 'India', 'Country');
+await basePage.clickInIframe(contactFrame, '#save', 'Save');
+
+// Jump BACK to iframe #1 — just use the first handle again
+const name = await basePage.getIframeFieldValue(leadFrame, '#name');
+expect(name).toBe('John');  // ✅ Still there!
+
+// Main page works too — no "switch to default" needed
+await expect(page.locator('#page-title')).toHaveText('My Record');
+```
+
+> **Key insight:** You NEVER need to "switch back" to the main page. Just use `page.locator()` for main page elements and `basePage.fillInIframe(frame, ...)` for iframe elements. They work side by side.
+
+### ❌ Common Iframe Mistakes and Fixes
+
+| Mistake | Fix |
+|---|---|
+| Using `page.getByLabel('Name')` for iframe content | Use `basePage.fillInIframe(frame, '#name', 'John', 'Name')` instead |
+| Forgetting to get the iframe handle first | Add `const frame = basePage.getIframe('#iframe-id');` before using helpers |
+| Wrong iframe selector | Right-click → Inspect → look for the `<iframe>` tag → use its id/name/title |
+| Element not found inside iframe | Check that your CSS selector targets an element **inside** the iframe, not on the main page |
+| Trying to "switch back" to main page | Not needed! Just use `page.locator()` directly |
+
+### 📖 Real Examples in This Project
+
+| File | What It Demonstrates |
+|---|---|
+| `tests/salesforce-iframe.test.ts` → **TC12** | Fill 7 fields inside a single iframe, read them back, verify |
+| `tests/salesforce-iframe.test.ts` → **TC13** | Fill fields across TWO iframes, click Save, verify success, jump between iframes |
+| `pages/SalesforceIframePage.ts` | Page Object pattern for iframe pages (optional advanced pattern) |
+| `pages/BasePage.ts` → "IFRAME HELPERS" section | All 10 helper methods with full documentation |
+| `test-fixtures/iframe-form.html` | Self-hosted HTML with 2 iframes and 13 form fields (used by TC12/TC13) |
+
+---
+
 ## ❓ Quick-Lookup Table
 
 | I want to... | What to type |
@@ -587,6 +817,12 @@ test.describe('Your Feature Name', () => {                          // ← CHANG
 | Wait for slow page | `await page.waitForTimeout(3000);` |
 | Log a step | `enhancedLogger.step('Step 1: desc', xrayTestKey);` |
 | Log test passed | `enhancedLogger.pass('TC01 passed', xrayTestKey);` |
+| **Get iframe handle** | `const frame = basePage.getIframe('#iframe-id');` |
+| **Fill field in iframe** | `await basePage.fillInIframe(frame, '#field', 'val', 'Desc');` |
+| **Click in iframe** | `await basePage.clickInIframe(frame, '.btn', 'Desc');` |
+| **Select in iframe** | `await basePage.selectInIframe(frame, '#dd', 'Opt', 'Desc');` |
+| **Check text in iframe** | `await basePage.assertTextInIframe(frame, '.msg', 'OK', 'Desc');` |
+| **Read value in iframe** | `await basePage.getIframeFieldValue(frame, '#field');` |
 | Run all tests | `npm test` |
 | Run one file | `npx playwright test tests/my-file.test.ts` |
 | Run with browser visible | `npm run run:headed` |
@@ -602,9 +838,12 @@ test.describe('Your Feature Name', () => {                          // ← CHANG
   right-click the button/field → "Inspect" → look at the text or label.
 - **Want to see real examples?** Look at `tests/login.test.ts` (3 login tests),
   `tests/api.test.ts` (3 API tests), `tests/playwright-dev.test.ts` (5 navigation tests),
-  and `tests/salesforce-iframe.test.ts` (2 iframe tests — demonstrates generic iframe handling).
+  and `tests/salesforce-iframe.test.ts` (2 iframe tests — see the [Iframe Testing Guide](#️-iframe-testing--a-beginners-guide) above).
+- **Need to test inside iframes?** (Salesforce, ServiceNow, Workday) — Read the
+  [Iframe Testing — A Beginner's Guide](#️-iframe-testing--a-beginners-guide) section above.
+  It has a complete template, cheat sheet, and common mistakes to avoid.
 - **Want a step-by-step walkthrough?** Read **[HOWTO_5_NAVIGATION_TESTS.md](HOWTO_5_NAVIGATION_TESTS.md)** — it explains exactly how the 5 playwright.dev tests were built from scratch.
 
 ---
 
-*Last updated: 4 March 2026*
+*Last updated: 6 March 2026*

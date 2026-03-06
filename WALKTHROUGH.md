@@ -729,9 +729,9 @@ reports/execution-report-2026-03-03.html
 | `tests/api.test.ts` | The API tests — 3 REST API tests that don't use a browser |
 | `tests/playwright-dev.test.ts` | The navigation tests — 5 playwright.dev tests |
 | `tests/salesforce-iframe.test.ts` | The iframe tests — 2 Salesforce-style multi-iframe tests |
-| `pages/BasePage.ts` | The "toolbox" — common browser actions (click, type, navigate, **iframe helpers**) every page can use |
-| `pages/LoginPage.ts` | The "login page expert" — knows exactly where the username, password, and Login button are |
-| `pages/SalesforceIframePage.ts` | The "iframe expert" — demonstrates filling forms inside iframes |
+| `pages/BasePage.ts` | The \"toolbox\" — common browser actions (click, type, navigate, **10 iframe helpers**) every page can use |
+| `pages/LoginPage.ts` | The \"login page expert\" — knows exactly where the username, password, and Login button are |
+| `pages/SalesforceIframePage.ts` | The \"iframe expert\" — demonstrates filling forms inside iframes (Salesforce/ServiceNow pattern) |
 | `playwright.config.ts` | The "control room" — tells Playwright which browser to use, how many tests to run in parallel, etc. |
 
 ---

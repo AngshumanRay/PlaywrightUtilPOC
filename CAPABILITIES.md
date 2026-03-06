@@ -35,7 +35,8 @@ Each capability follows the same format:
 1. [The One-Sentence Summary](#the-one-sentence-summary)
 2. [All Capabilities at a Glance](#all-capabilities-at-a-glance)
 3. [🌐 Browser Testing (Playwright)](#-browser-testing-playwright)
-4. [📋 JIRA XRAY Integration](#-jira-xray-integration)
+4. [🖼️ Iframe Testing (Generic Iframe Helpers)](#️-iframe-testing-generic-iframe-helpers)
+5. [📋 JIRA XRAY Integration](#-jira-xray-integration)
 5. [🗃️ Database / Test Data](#️-database--test-data)
 6. [📧 Email Verification](#-email-verification)
 7. [🌐 API Testing Helper](#-api-testing-helper)
@@ -69,6 +70,7 @@ Here's everything this framework can do, at a glance:
 │                                                                          │
 │  🟢 ACTIVE (works out of the box):                                       │
 │     ✅ Browser Testing (UI)  — open Chrome, click, type, verify things   │
+│     ✅ Iframe Testing        — generic helpers for Salesforce-style iframes│
 │     ✅ API Testing           — call REST endpoints, check responses      │
 │     ✅ Page Objects          — organized code for each page of your app  │
 │     ✅ HTML Execution Report — charts, screenshots, a11y, step logs      │
@@ -134,9 +136,184 @@ Every team has different application speeds. Instead of digging into config file
 > **No code changes needed!** Just edit `.env` and re-run tests.
 
 ### Where is the code?
-- `pages/BasePage.ts` — reusable actions (click, fill, navigate, wait)
+- `pages/BasePage.ts` — reusable actions (click, fill, navigate, wait, **iframe helpers**)
 - `pages/LoginPage.ts` — login-specific actions (an example page)
+- `pages/SalesforceIframePage.ts` — iframe page object (an example for Salesforce-style apps)
 - `tests/login.test.ts` — actual tests that use the page objects
+
+---
+
+## 🖼️ Iframe Testing (Generic Iframe Helpers)
+
+### What is it? (Explained Like You're 5)
+
+Imagine a **picture frame** on a wall. The wall is your web page, and the picture inside the frame is a **separate mini-page** with its own buttons, text fields, and content. That mini-page is called an **iframe**.
+
+Enterprise apps like **Salesforce, ServiceNow, and Workday** put their forms and editors inside iframes. The problem? Playwright's normal `page.locator()` **cannot see** anything inside an iframe — it's like looking at the wall but not seeing what's inside the picture frame.
+
+Our framework solves this with **10 generic helper methods** that let you interact with iframe content as easily as normal page content — with **zero frame switching** (no `switchToFrame` / `switchToDefault` like Selenium).
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│                                                                          │
+│  WITHOUT iframe helpers (❌ HARD — like Selenium):                       │
+│    driver.switchTo().frame("myFrame");      // enter the iframe          │
+│    driver.findElement(By.id("name")).sendKeys("John");                   │
+│    driver.switchTo().defaultContent();       // leave the iframe         │
+│    driver.switchTo().frame("otherFrame");    // enter another iframe     │
+│    ...keeps switching back and forth forever... 🤯                      │
+│                                                                          │
+│  WITH iframe helpers (✅ EASY — our framework):                          │
+│    const frame = basePage.getIframe('#myFrame');     // get handle ONCE  │
+│    await basePage.fillInIframe(frame, '#name', 'John', 'Name'); // done │
+│    // NO switchTo! NO switchBack! Just use the handle.                  │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+### What can it do?
+
+| Action | Plain English | Example |
+|--------|--------------|---------|
+| **Get an iframe** | "Enter this iframe" | `basePage.getIframe('#myFrame')` |
+| **Get nested iframe** | "Enter an iframe inside another iframe" | `basePage.getNestedIframe('#outer', '#inner')` |
+| **Get element in iframe** | "Find this element inside the iframe" | `basePage.locatorInIframe(frame, 'h1')` |
+| **Fill field in iframe** | "Type into a text box inside the iframe" | `await basePage.fillInIframe(frame, '#email', 'a@b.com', 'Email')` |
+| **Click in iframe** | "Click a button inside the iframe" | `await basePage.clickInIframe(frame, '.save', 'Save')` |
+| **Select in iframe** | "Pick a dropdown option inside the iframe" | `await basePage.selectInIframe(frame, '#status', 'Active', 'Status')` |
+| **Type in iframe** | "Type into a rich text editor inside the iframe" | `await basePage.typeInIframe(frame, '#body', 'Notes', 'Editor')` |
+| **Check text in iframe** | "Verify text appears inside the iframe" | `await basePage.assertTextInIframe(frame, '.msg', 'Saved', 'Msg')` |
+| **Check visible in iframe** | "Verify element is visible inside the iframe" | `await basePage.assertVisibleInIframe(frame, '#name', 'Name')` |
+| **Read value in iframe** | "Read what's in a text field inside the iframe" | `await basePage.getIframeFieldValue(frame, '#name')` |
+| **Read text in iframe** | "Read text content from an element in the iframe" | `await basePage.getIframeTextContent(frame, '.label')` |
+
+### The 3-Step Pattern (This Is All You Need to Know)
+
+```typescript
+import { BasePage } from '../pages/BasePage';
+
+// STEP 1: Create a BasePage (gives you all iframe helpers)
+const basePage = new BasePage(page);
+
+// STEP 2: Get the iframe handle — do this ONCE per iframe
+const frame = basePage.getIframe('#lead-iframe');  // CSS selector of <iframe>
+
+// STEP 3: Use helpers — pass the frame handle + CSS selector of the element INSIDE
+await basePage.fillInIframe(frame, '#firstName', 'John', 'First Name');
+await basePage.fillInIframe(frame, '#lastName',  'Doe',  'Last Name');
+await basePage.clickInIframe(frame, '#saveBtn', 'Save button');
+await basePage.assertTextInIframe(frame, '.msg', 'Saved!', 'Success message');
+
+// Back to main page? Just use page.locator() — NO switch needed
+await expect(page.locator('#page-title')).toBeVisible();
+```
+
+### Working with Multiple Iframes
+
+Many enterprise pages have 2+ iframes. Hold multiple handles simultaneously — no switching needed:
+
+```typescript
+// Get BOTH handles
+const leadFrame    = basePage.getIframe('#lead-iframe');
+const contactFrame = basePage.getIframe('#contact-iframe');
+
+// Work in iframe #1
+await basePage.fillInIframe(leadFrame, '#name', 'John', 'Name');
+
+// Jump to iframe #2 — just use the other handle
+await basePage.fillInIframe(contactFrame, '#city', 'Mumbai', 'City');
+await basePage.selectInIframe(contactFrame, '#country', 'India', 'Country');
+
+// Jump BACK to iframe #1 — just use the first handle again
+const name = await basePage.getIframeFieldValue(leadFrame, '#name');
+expect(name).toBe('John');  // ✅ Still there
+
+// Main page — no switching needed
+await expect(page.locator('#heading')).toBeVisible();
+```
+
+### Nested Iframes (Iframe Inside an Iframe)
+
+Some apps (like Salesforce Classic) have **iframes inside iframes**:
+
+```typescript
+// Page → Outer iframe → Inner iframe → Your content
+const innerFrame = basePage.getNestedIframe('#outerFrame', '#innerFrame');
+await basePage.fillInIframe(innerFrame, '#field', 'value', 'My field');
+```
+
+### Rich Text Editors (TinyMCE, CKEditor) Inside Iframes
+
+Salesforce Description fields, email composers, and notes use rich text editors inside iframes:
+
+```typescript
+const editorFrame = basePage.getIframe('iframe.cke_wysiwyg_frame');
+await basePage.typeInIframe(editorFrame, '#tinymce', 'Meeting notes...', 'Notes editor');
+// typeInIframe() handles contenteditable elements + has smart fallback for tricky editors
+```
+
+### How to Find Your Iframe's Selector
+
+1. Open Chrome → go to your app's page
+2. Right-click on content you suspect is inside an iframe → **Inspect**
+3. In DevTools, look **upward** in the HTML tree for an `<iframe>` tag
+4. Use its `id`, `name`, `title`, or `class`:
+
+```html
+<iframe id="formFrame">           →  '#formFrame'
+<iframe name="vfFrameId_001">     →  'iframe[name="vfFrameId_001"]'
+<iframe title="New Lead">         →  'iframe[title="New Lead"]'
+<iframe class="editor-frame">     →  'iframe.editor-frame'
+```
+
+### Complete Template — Copy & Paste This to Start
+
+```typescript
+import path from 'path';
+import { test, expect } from './xray-test-fixture';
+import { BasePage } from '../pages/BasePage';
+import { enhancedLogger } from '../utils/helpers/enhanced-logger';
+import { getTestData, isTestEnabled } from '../utils/helpers/test-data-loader';
+
+const DATA_FILE = 'ui-tests.yaml';
+
+test.describe('My Iframe Tests', () => {
+
+  test('TC##: Description of your iframe test', {
+    annotation: { type: 'xray', description: 'PROJ-XXX' },
+  }, async ({ page, xrayTestKey }) => {
+
+    const td = getTestData(DATA_FILE, 'PROJ-XXX');
+    if (!isTestEnabled(DATA_FILE, 'PROJ-XXX')) test.skip();
+
+    const basePage = new BasePage(page);
+
+    enhancedLogger.step('Step 1: Navigate to the page', xrayTestKey);
+    await page.goto('https://your-app.com/page');                        // ← CHANGE
+
+    enhancedLogger.step('Step 2: Get the iframe handle', xrayTestKey);
+    const frame = basePage.getIframe('#your-iframe-selector');           // ← CHANGE
+
+    enhancedLogger.step('Step 3: Fill fields inside the iframe', xrayTestKey);
+    await basePage.fillInIframe(frame, '#field1', td.field1 as string, 'Field 1');
+    await basePage.fillInIframe(frame, '#field2', td.field2 as string, 'Field 2');
+
+    enhancedLogger.step('Step 4: Click button inside iframe', xrayTestKey);
+    await basePage.clickInIframe(frame, '#saveBtn', 'Save button');
+
+    enhancedLogger.step('Step 5: Verify success', xrayTestKey);
+    await basePage.assertTextInIframe(frame, '.msg', 'Saved!', 'Success');
+
+    enhancedLogger.pass('TC## passed — iframe test complete', xrayTestKey);
+  });
+});
+```
+
+### Where is the code?
+- `pages/BasePage.ts` → search for **"IFRAME HELPERS"** — 10 methods with full JSDoc
+- `pages/SalesforceIframePage.ts` — example Page Object for iframe-heavy apps
+- `tests/salesforce-iframe.test.ts` — 2 working tests (TC12 + TC13) using the generic pattern
+- `test-fixtures/iframe-form.html` — self-hosted HTML with 2 iframes and 13 form fields
 
 ---
 
@@ -1650,6 +1827,7 @@ Every utility is controlled by your `.env` file. Here's the master switch for ea
 | Utility | How to Enable | How to Disable |
 |---------|--------------|----------------|
 | **Playwright (UI tests)** | Always on (it's the core) | Can't disable |
+| **Iframe Helpers** | Always on — available via BasePage | Can't disable |
 | **API Testing** | Always on (no config needed) | Can't disable |
 | **HTML Report** | Always on — generated after every run | Can't disable |
 | **Global Timeouts** | Set `TEST_TIMEOUT`, `ACTION_TIMEOUT`, etc. in `.env` | Uses sensible defaults (60s/10s/10s/30s) |
@@ -1677,5 +1855,5 @@ Every utility is controlled by your `.env` file. Here's the master switch for ea
 
 *Last updated: 6 March 2026*
 *Framework: Playwright AutoAgent – AI Automation Framework*
-*Tests: 3 Login (UI) + 3 API (REST) + 5 Navigation (UI) = 11 total*
+*Tests: 3 Login (UI) + 3 API (REST) + 5 Navigation (UI) + 2 Iframe (UI) = 13 total*
 *Next: Read [WALKTHROUGH.md](WALKTHROUGH.md) to see the end-to-end XRAY flow, or [WRITE_A_TEST.md](WRITE_A_TEST.md) to write your first test.*
