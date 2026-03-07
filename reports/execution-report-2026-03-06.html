@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Playwright AutoAgent — Execution Report — 2026-03-06</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg-primary: #0a0e1a;
+      --bg-secondary: #111827;
+      --bg-card: #1a1f35;
+      --bg-card-hover: #1f2847;
+      --border: #2d3555;
+      --border-glow: rgba(99, 102, 241, 0.3);
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-blue: #6366f1;
+      --accent-cyan: #22d3ee;
+      --accent-green: #22c55e;
+      --accent-red: #ef4444;
+      --accent-amber: #f59e0b;
+      --accent-purple: #a78bfa;
+      --accent-orange: #fb923c;
+      --glass: rgba(26, 31, 53, 0.7);
+      --glass-border: rgba(99, 102, 241, 0.15);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+    a { color: var(--accent-cyan); text-decoration: none; }
+    a:hover { color: #67e8f9; }
+
+    /* ---- ANIMATED BACKGROUND ---- */
+    .bg-mesh {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(34, 211, 238, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 80%, rgba(167, 139, 250, 0.06) 0%, transparent 50%),
+        var(--bg-primary);
+    }
+
+    /* ---- HEADER ---- */
+    .header {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(34, 211, 238, 0.08) 50%, rgba(167, 139, 250, 0.1) 100%);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 36px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+    .header::before {
+      content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+      background: conic-gradient(from 0deg, transparent, rgba(99, 102, 241, 0.03), transparent, rgba(34, 211, 238, 0.03), transparent);
+      animation: headerRotate 20s linear infinite;
+    }
+    @keyframes headerRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .header > * { position: relative; z-index: 1; }
+    .header h1 {
+      font-size: 32px; font-weight: 800; letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #f1f5f9 0%, #6366f1 50%, #22d3ee 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header .subtitle { margin-top: 6px; color: var(--text-secondary); font-size: 14px; font-weight: 500; }
+    .header .meta { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 20px; color: var(--text-secondary); font-size: 13px; }
+    .header .meta-item { display: flex; align-items: center; gap: 6px; }
+    .header .meta-item strong { color: var(--text-primary); }
+    .env-badge { display: inline-block; padding: 3px 12px; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; }
+    .env-staging    { background: rgba(99,102,241,0.2); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.4); }
+    .env-production { background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); }
+    .env-dev        { background: rgba(34,197,94,0.2); color: #86efac; border: 1px solid rgba(34,197,94,0.4); }
+    .env-other      { background: rgba(167,139,250,0.2); color: #ddd6fe; border: 1px solid rgba(167,139,250,0.4); }
+    .xray-exec-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(34,211,238,0.1); border: 1px solid rgba(34,211,238,0.3);
+      border-radius: 8px; padding: 5px 14px; color: var(--accent-cyan); font-size: 12px; font-weight: 600;
+      transition: all 0.2s;
+    }
+    .xray-exec-link:hover { background: rgba(34,211,238,0.2); transform: translateY(-1px); }
+    .xray-not-configured {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);
+      border-radius: 8px; padding: 5px 14px; color: #fde68a; font-size: 12px; font-weight: 500;
+    }
+
+    /* ---- LAYOUT ---- */
+    .container { max-width: 1440px; margin: 0 auto; padding: 36px 28px; }
+    .section-title {
+      font-size: 20px; font-weight: 700; color: var(--text-primary);
+      margin: 44px 0 18px; padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-title .count-chip {
+      background: rgba(99,102,241,0.15); color: var(--accent-blue);
+      font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 9999px;
+      border: 1px solid rgba(99,102,241,0.3); margin-left: 8px;
+    }
+
+    /* ---- GLASSMORPHISM CARDS ---- */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .card {
+      background: var(--glass); backdrop-filter: blur(12px);
+      border-radius: 16px; padding: 22px 16px; text-align: center;
+      border: 1px solid var(--glass-border);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative; overflow: hidden;
+    }
+    .card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .card:hover { transform: translateY(-4px); border-color: var(--border-glow); box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15); }
+    .card:hover::before { opacity: 1; }
+    .card .value { font-size: 40px; font-weight: 800; line-height: 1; letter-spacing: -1px; }
+    .card .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-top: 8px; letter-spacing: 1px; font-weight: 600; }
+    .card.pass  .value { color: var(--accent-green); }
+    .card.fail  .value { color: var(--accent-red); }
+    .card.skip  .value { color: var(--accent-amber); }
+    .card.total .value { color: var(--accent-blue); }
+    .card.rate  .value { color: var(--accent-green); }
+    .card.dur   .value { color: var(--accent-purple); font-size: 30px; }
+    .card.ui    .value { color: var(--accent-cyan); }
+    .card.api   .value { color: var(--accent-orange); }
+
+    /* ---- PROGRESS BAR ---- */
+    .progress-wrap { margin-bottom: 32px; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 8px; font-weight: 500; }
+    .progress-bar { background: var(--bg-secondary); border-radius: 10px; height: 16px; overflow: hidden; display: flex; border: 1px solid var(--border); }
+    .progress-pass { background: linear-gradient(90deg, #059669, #22c55e); height: 100%; transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 10px 0 0 10px; }
+    .progress-fail { background: linear-gradient(90deg, #dc2626, #ef4444); height: 100%; }
+    .progress-skip { background: linear-gradient(90deg, #d97706, #f59e0b); height: 100%; border-radius: 0 10px 10px 0; }
+
+    /* ---- CHARTS ---- */
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+    .chart-box {
+      background: var(--glass); backdrop-filter: blur(12px);
+      border-radius: 16px; padding: 22px; border: 1px solid var(--glass-border);
+      transition: border-color 0.3s;
+    }
+    .chart-box:hover { border-color: var(--border-glow); }
+    .chart-box h3 { color: var(--text-muted); font-size: 12px; text-transform: uppercase; margin-bottom: 14px; letter-spacing: 1px; font-weight: 700; }
+    .chart-container { position: relative; height: 260px; }
+    @media(max-width:900px) { .charts-grid { grid-template-columns: 1fr; } }
+
+    /* ---- OBSERVABILITY DASHBOARD ---- */
+    .obs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 28px; }
+    .obs-card {
+      background: var(--glass); backdrop-filter: blur(12px);
+      border-radius: 14px; padding: 20px; border: 1px solid var(--glass-border);
+      position: relative; overflow: hidden;
+      transition: all 0.3s;
+    }
+    .obs-card:hover { border-color: var(--border-glow); transform: translateY(-2px); }
+    .obs-card .obs-icon { font-size: 24px; margin-bottom: 10px; }
+    .obs-card .obs-value { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+    .obs-card .obs-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 4px; font-weight: 600; }
+    .obs-card .obs-bar {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+    }
+
+    /* ---- TABLES ---- */
+    table { width: 100%; border-collapse: collapse; background: var(--bg-card); border-radius: 16px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 28px; }
+    th { background: rgba(99,102,241,0.08); color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 14px 16px; text-align: left; white-space: nowrap; font-weight: 700; }
+    td { padding: 12px 16px; border-top: 1px solid rgba(45,53,85,0.5); font-size: 13px; vertical-align: middle; }
+    tr { transition: background 0.2s; }
+    tr:hover td { background: var(--bg-card-hover); }
+
+    /* ---- BADGES ---- */
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 9999px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; }
+    .badge-pass  { background: rgba(34,197,94,0.15); color: #86efac; border: 1px solid rgba(34,197,94,0.3); }
+    .badge-fail  { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+    .badge-skip  { background: rgba(245,158,11,0.15); color: #fde68a; border: 1px solid rgba(245,158,11,0.3); }
+    .badge-ui    { background: rgba(34,211,238,0.12); color: #67e8f9; border: 1px solid rgba(34,211,238,0.3); font-size: 10px; }
+    .badge-api   { background: rgba(251,146,60,0.12); color: #fdba74; border: 1px solid rgba(251,146,60,0.3); font-size: 10px; }
+    .badge-a11y-critical  { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+    .badge-a11y-serious   { background: rgba(251,146,60,0.15); color: #fdba74; border: 1px solid rgba(251,146,60,0.3); }
+    .badge-a11y-moderate  { background: rgba(245,158,11,0.15); color: #fef08a; border: 1px solid rgba(245,158,11,0.3); }
+    .badge-a11y-minor     { background: rgba(99,102,241,0.12); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); }
+
+    /* ---- XRAY CHIP ---- */
+    .xray-chip {
+      display: inline-block; background: rgba(99,102,241,0.12); color: #a5b4fc;
+      padding: 3px 10px; border-radius: 6px; font-size: 11px; font-family: 'SF Mono', monospace;
+      font-weight: 700; text-decoration: none; border: 1px solid rgba(99,102,241,0.3);
+      transition: all 0.2s;
+    }
+    .xray-chip:hover { background: rgba(99,102,241,0.25); color: #c7d2fe; transform: translateY(-1px); }
+    .xray-chip-demo {
+      display: inline-block; background: rgba(100,116,139,0.1); color: #64748b;
+      padding: 3px 10px; border-radius: 6px; font-size: 11px; font-family: 'SF Mono', monospace;
+      border: 1px dashed rgba(100,116,139,0.3); cursor: help;
+    }
+
+    /* ---- TIMESTAMPS ---- */
+    .timestamp { color: var(--text-muted); font-size: 11px; font-family: 'SF Mono', monospace; }
+    .test-title { font-weight: 500; color: var(--text-primary); }
+    .test-key   { color: var(--text-muted); font-size: 11px; font-family: 'SF Mono', monospace; }
+
+    /* ---- ACCORDION ---- */
+    .accordion {
+      background: var(--glass); backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border); border-radius: 14px;
+      margin-bottom: 10px; overflow: hidden; transition: border-color 0.3s;
+    }
+    .accordion:hover { border-color: var(--border-glow); }
+    .accordion-header { padding: 16px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; transition: background 0.2s; }
+    .accordion-header:hover { background: var(--bg-card-hover); }
+    .accordion-header .acc-title { font-size: 14px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+    .accordion-body { display: none; padding: 0 18px 18px; }
+    .accordion-body.open { display: block; }
+    .log-line { padding: 4px 0; border-bottom: 1px solid rgba(45,53,85,0.3); font-family: 'SF Mono', 'Fira Code', Consolas, monospace; font-size: 12px; line-height: 1.6; }
+    .log-pass  { color: #86efac; }
+    .log-fail  { color: #fca5a5; }
+    .log-warn  { color: #fde68a; }
+    .log-error { color: #fca5a5; }
+    .log-step  { color: #a5b4fc; }
+    .log-info  { color: var(--text-secondary); }
+
+    /* ---- STATUS CARDS ---- */
+    .status-card {
+      background: var(--glass); backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border); border-radius: 16px;
+      padding: 20px 24px; margin-bottom: 12px; transition: all 0.3s;
+    }
+    .status-card:hover { border-color: var(--border-glow); }
+    .status-card h4 { color: var(--text-primary); margin-bottom: 8px; font-size: 14px; font-weight: 600; }
+    .status-card p  { color: var(--text-secondary); font-size: 13px; line-height: 1.7; }
+    .status-card code { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; font-family: 'SF Mono', monospace; font-size: 11px; color: #a5b4fc; }
+    .status-ok   { border-left: 4px solid var(--accent-green); }
+    .status-warn { border-left: 4px solid var(--accent-amber); }
+    .status-info { border-left: 4px solid var(--accent-blue); }
+
+    /* ---- SCREENSHOT ---- */
+    .screenshot-thumb { max-width: 200px; max-height: 120px; border-radius: 8px; border: 1px solid var(--border); cursor: zoom-in; transition: all 0.3s; object-fit: cover; }
+    .screenshot-thumb:hover { transform: scale(1.05); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .screenshot-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
+    .screenshot-modal.open { display: flex; }
+    .screenshot-modal img { max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 0 80px rgba(99,102,241,0.2); }
+
+    /* ---- TAB NAVIGATION ---- */
+    .nav-tabs {
+      display: flex; gap: 4px; margin-bottom: 24px; padding: 4px;
+      background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    .nav-tab {
+      padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 13px;
+      font-weight: 600; color: var(--text-muted); transition: all 0.2s;
+      white-space: nowrap; border: none; background: none;
+    }
+    .nav-tab:hover { color: var(--text-primary); background: rgba(99,102,241,0.08); }
+    .nav-tab.active { background: var(--accent-blue); color: white; box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ---- FOOTER ---- */
+    .footer {
+      text-align: center; padding: 32px 20px; color: var(--text-muted); font-size: 12px;
+      border-top: 1px solid var(--border); margin-top: 48px;
+    }
+    .footer a { color: var(--accent-blue); }
+  </style>
+</head>
+<body>
+<div class="bg-mesh"></div>
+
+<!-- =========================================================== -->
+<!-- HEADER                                                        -->
+<!-- =========================================================== -->
+<div class="header">
+  <h1>⚡ Playwright AutoAgent</h1>
+  <div class="subtitle">AI Automation Framework — UI + API Test Results — JIRA XRAY Integration</div>
+  <div class="meta">
+    <div class="meta-item">📅 <strong>2026-03-06</strong></div>
+    <div class="meta-item">🚀 Started: <strong>3/6/2026, 2:27:32 PM</strong></div>
+    <div class="meta-item">🌍
+      <span class="env-badge env-staging">staging</span>
+    </div>
+    <div class="meta-item">🔖 Sprint: <strong>1</strong></div>
+    <div class="meta-item">⏱️ Duration: <strong>96.2s</strong></div>
+    <div class="meta-item">
+      <span class="xray-not-configured" title="Set JIRA_BASE_URL in .env to enable XRAY">⚠️ XRAY: Not Configured</span>
+    </div>
+    <div class="meta-item">⏰ Generated: <strong>3/6/2026, 2:28:31 PM</strong></div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- =========================================================== -->
+<!-- SUMMARY CARDS                                                 -->
+<!-- =========================================================== -->
+<div class="section-title">🏆 Execution Summary</div>
+<div class="cards">
+  <div class="card total"><div class="value">13</div><div class="label">Total Tests</div></div>
+  <div class="card pass"><div class="value">13</div><div class="label">Passed ✅</div></div>
+  <div class="card fail"><div class="value">0</div><div class="label">Failed ❌</div></div>
+  <div class="card skip"><div class="value">0</div><div class="label">Aborted ⚠️</div></div>
+  <div class="card rate"><div class="value">100%</div><div class="label">Pass Rate</div></div>
+  <div class="card dur"><div class="value">96.2s</div><div class="label">Duration</div></div>
+  <div class="card ui"><div class="value">9</div><div class="label">UI Tests 🖥️</div></div>
+  <div class="card api"><div class="value">4</div><div class="label">API Tests 🔌</div></div>
+  <div class="card" style="border-color:rgba(239,68,68,0.4)">
+    <div class="value" style="color:var(--accent-red)">11</div>
+    <div class="label">A11y Issues</div>
+  </div>
+</div>
+
+<!-- Progress Bar -->
+<div class="progress-wrap">
+  <div class="progress-label">
+    <span>✅ 13 passed &nbsp; ❌ 0 failed &nbsp; ⚠️ 0 aborted</span>
+    <span>100% pass rate</span>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-pass" style="width:100.0%"></div>
+    <div class="progress-fail" style="width:0.0%"></div>
+    <div class="progress-skip" style="width:0.0%"></div>
+  </div>
+</div>
+
+<!-- =========================================================== -->
+<!-- TAB NAVIGATION                                                -->
+<!-- =========================================================== -->
+<div class="nav-tabs">
+  <button class="nav-tab active" onclick="switchTab('tab-observability')">📡 Observability</button>
+  <button class="nav-tab" onclick="switchTab('tab-charts')">📈 Charts</button>
+  <button class="nav-tab" onclick="switchTab('tab-results')">📋 Results</button>
+  <button class="nav-tab" onclick="switchTab('tab-perf')">⚡ Performance</button>
+  <button class="nav-tab" onclick="switchTab('tab-a11y')">♿ Accessibility</button>
+  <button class="nav-tab" onclick="switchTab('tab-logs')">📝 Logs</button>
+  <button class="nav-tab" onclick="switchTab('tab-security')">🔐 Security</button>
+</div>
+
+<!-- =========================================================== -->
+<!-- TAB: OBSERVABILITY DASHBOARD                                  -->
+<!-- =========================================================== -->
+<div class="tab-content active" id="tab-observability">
+<div class="section-title">📡 Observability Dashboard <span class="count-chip">Real-time Metrics</span></div>
+<div class="obs-grid">
+  <div class="obs-card">
+    <div class="obs-icon">🌐</div>
+    <div class="obs-value" style="color:var(--accent-cyan)">288</div>
+    <div class="obs-label">Total HTTP Requests</div>
+    <div class="obs-bar"></div>
+  </div>
+  <div class="obs-card">
+    <div class="obs-icon">📦</div>
+    <div class="obs-value" style="color:var(--accent-purple)">17598.2 KB</div>
+    <div class="obs-label">Data Transferred</div>
+    <div class="obs-bar" style="background:linear-gradient(90deg,var(--accent-purple),#c084fc)"></div>
+  </div>
+  <div class="obs-card">
+    <div class="obs-icon">⚡</div>
+    <div class="obs-value" style="color:var(--accent-green)">0.63s</div>
+    <div class="obs-label">Avg Page Load</div>
+    <div class="obs-bar" style="background:linear-gradient(90deg,var(--accent-green),#4ade80)"></div>
+  </div>
+  <div class="obs-card">
+    <div class="obs-icon">🎨</div>
+    <div class="obs-value" style="color:#22d3ee">0.36s</div>
+    <div class="obs-label">Avg FCP</div>
+    <div class="obs-bar" style="background:linear-gradient(90deg,#06b6d4,#22d3ee)"></div>
+  </div>
+  <div class="obs-card">
+    <div class="obs-icon">📐</div>
+    <div class="obs-value" style="color:#f472b6">—</div>
+    <div class="obs-label">Avg LCP</div>
+    <div class="obs-bar" style="background:linear-gradient(90deg,#ec4899,#f472b6)"></div>
+  </div>
+  <div class="obs-card">
+    <div class="obs-icon">❌</div>
+    <div class="obs-value" style="color:var(--accent-red)">0</div>
+    <div class="obs-label">Error Logs</div>
+    <div class="obs-bar" style="background:linear-gradient(90deg,var(--accent-red),#f87171)"></div>
+  </div>
+  <div class="obs-card">
+    <div class="obs-icon">⚠️</div>
+    <div class="obs-value" style="color:var(--accent-amber)">8</div>
+    <div class="obs-label">Warning Logs</div>
+    <div class="obs-bar" style="background:linear-gradient(90deg,var(--accent-amber),#fbbf24)"></div>
+  </div>
+  <div class="obs-card">
+    <div class="obs-icon">♿</div>
+    <div class="obs-value" style="color:var(--accent-amber)">11</div>
+    <div class="obs-label">A11y Violations</div>
+    <div class="obs-bar" style="background:linear-gradient(90deg,var(--accent-amber),#fbbf24)"></div>
+  </div>
+</div>
+
+<!-- Per-test Observability Table -->
+
+<h3 style="color:var(--text-muted);font-size:13px;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;font-weight:700">Per-Test Metrics Breakdown</h3>
+<table>
+  <thead><tr><th>Test</th><th>Type</th><th>Duration</th><th>Page Load</th><th>FCP</th><th>LCP</th><th>Requests</th><th>Transfer</th></tr></thead>
+  <tbody>
+    
+    <tr>
+      <td style="font-size:12px">TC04: GET /posts/1 — Should return a valid blog post with correct fields</td>
+      <td><span class="badge badge-api" style="font-size:10px">API</span></td>
+      <td>0.59s</td>
+      <td>0.12s</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC05: POST /posts — Should create a new post and return 201 Created</td>
+      <td><span class="badge badge-api" style="font-size:10px">API</span></td>
+      <td>0.38s</td>
+      <td>0.02s</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC06: GET /users/1 — Should return a complete user profile with nested fields</td>
+      <td><span class="badge badge-api" style="font-size:10px">API</span></td>
+      <td>0.15s</td>
+      <td>0.02s</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC07: Navigate to Homepage and verify Playwright title</td>
+      <td><span class="badge badge-ui" style="font-size:10px">UI</span></td>
+      <td>9.09s</td>
+      <td>1.11s</td>
+      <td>0.41s</td>
+      <td>—</td>
+      <td>31</td>
+      <td>1830.7 KB</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC01: Valid credentials should log the user in successfully</td>
+      <td><span class="badge badge-ui" style="font-size:10px">UI</span></td>
+      <td>14.13s</td>
+      <td>0.66s</td>
+      <td>—</td>
+      <td>—</td>
+      <td>21</td>
+      <td>2213.8 KB</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC08: Click Docs tab and verify Installation page title</td>
+      <td><span class="badge badge-ui" style="font-size:10px">UI</span></td>
+      <td>9.70s</td>
+      <td>1.61s</td>
+      <td>0.61s</td>
+      <td>—</td>
+      <td>53</td>
+      <td>2396.7 KB</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC02: Wrong password should show an error message</td>
+      <td><span class="badge badge-ui" style="font-size:10px">UI</span></td>
+      <td>13.34s</td>
+      <td>0.66s</td>
+      <td>—</td>
+      <td>—</td>
+      <td>21</td>
+      <td>2214.4 KB</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC09: Click API tab and verify Playwright Library page title</td>
+      <td><span class="badge badge-api" style="font-size:10px">API</span></td>
+      <td>9.07s</td>
+      <td>0.88s</td>
+      <td>0.40s</td>
+      <td>—</td>
+      <td>47</td>
+      <td>2041.2 KB</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC03: Empty credentials should show validation errors</td>
+      <td><span class="badge badge-ui" style="font-size:10px">UI</span></td>
+      <td>13.06s</td>
+      <td>0.84s</td>
+      <td>—</td>
+      <td>—</td>
+      <td>21</td>
+      <td>2214.4 KB</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC10: Click Community tab and verify Welcome page title</td>
+      <td><span class="badge badge-ui" style="font-size:10px">UI</span></td>
+      <td>9.93s</td>
+      <td>1.60s</td>
+      <td>0.57s</td>
+      <td>—</td>
+      <td>55</td>
+      <td>2019.9 KB</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC12: Iframe — fill multiple form fields inside a single iframe</td>
+      <td><span class="badge badge-ui" style="font-size:10px">UI</span></td>
+      <td>0.12s</td>
+      <td>0.02s</td>
+      <td>0.03s</td>
+      <td>—</td>
+      <td>1</td>
+      <td>9.3 KB</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC13: Iframe — fill fields across TWO iframes and verify</td>
+      <td><span class="badge badge-ui" style="font-size:10px">UI</span></td>
+      <td>0.14s</td>
+      <td>0.02s</td>
+      <td>0.02s</td>
+      <td>—</td>
+      <td>1</td>
+      <td>9.3 KB</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC11: Switch to Python language and verify Python page title</td>
+      <td><span class="badge badge-ui" style="font-size:10px">UI</span></td>
+      <td>16.46s</td>
+      <td>—</td>
+      <td>0.45s</td>
+      <td>—</td>
+      <td>37</td>
+      <td>2648.7 KB</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- =========================================================== -->
+<!-- TAB: CHARTS                                                   -->
+<!-- =========================================================== -->
+<div class="tab-content" id="tab-charts">
+<div class="section-title">📈 Charts & Graphs</div>
+<div class="charts-grid">
+  <div class="chart-box">
+    <h3>Pass / Fail Distribution</h3>
+    <div class="chart-container"><canvas id="pieChart"></canvas></div>
+  </div>
+  <div class="chart-box">
+    <h3>Test Duration (seconds)</h3>
+    <div class="chart-container"><canvas id="durationChart"></canvas></div>
+  </div>
+  <div class="chart-box">
+    <h3>Page Load Time (seconds)</h3>
+    <div class="chart-container"><canvas id="loadChart"></canvas></div>
+  </div>
+  <div class="chart-box">
+    <h3>Result per Test</h3>
+    <div class="chart-container"><canvas id="histChart"></canvas></div>
+  </div>
+</div>
+</div>
+
+<!-- =========================================================== -->
+<!-- TAB: TEST RESULTS                                             -->
+<!-- =========================================================== -->
+<div class="tab-content" id="tab-results">
+<div class="section-title">📋 Test Case Results <span class="count-chip">13 tests</span></div>
+
+<!-- JIRA XRAY STATUS -->
+<div class="status-card status-warn" style="margin-bottom:20px">
+  <h4>⚠️ XRAY Not Configured — Demo Mode</h4>
+  <p>To enable: set <code>JIRA_BASE_URL</code>, <code>JIRA_USERNAME</code>, <code>JIRA_API_TOKEN</code> in <code>.env</code></p>
+</div>
+
+<table>
+  <thead>
+    <tr><th>#</th><th>Type</th><th>XRAY Key</th><th>Test Name</th><th>Status</th><th>Duration</th><th>Page Load</th><th>A11y</th><th>Started</th><th>Error</th></tr>
+  </thead>
+  <tbody>
+    <tr style="background:rgba(99,102,241,0.08);border-top:2px solid var(--accent-blue)">
+          <td colspan="10" style="padding:12px 16px;font-weight:700;font-size:14px;color:var(--accent-cyan);letter-spacing:0.3px">
+            🔌 API Feature Tests <span style="font-weight:400;font-size:12px;color:var(--text-secondary);margin-left:8px">(4 tests)</span>
+            <span class="badge badge-pass" style="font-size:10px">4/4 PASS</span>
+          </td>
+        </tr>
+    <tr>
+      <td style="text-align:center;color:var(--text-muted);font-size:12px;font-weight:600">1</td>
+      <td><span class="badge badge-api">🔌 API</span></td>
+      <td><span class="xray-chip-demo" title="Configure JIRA_BASE_URL in .env">PROJ-104</span></td>
+      <td>
+        <div class="test-title">TC04: GET /posts/1 — Should return a valid blog post with correct fields</div>
+        <div class="test-key">PROJ-104</div>
+      </td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>0.6s</td>
+      <td>0.1s</td>
+      <td><span class="badge badge-a11y-critical">2 (2 crit)</span></td>
+      <td class="timestamp">2:27:33 PM</td>
+      <td style="color:#fca5a5;font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="">—</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;color:var(--text-muted);font-size:12px;font-weight:600">2</td>
+      <td><span class="badge badge-api">🔌 API</span></td>
+      <td><span class="xray-chip-demo" title="Configure JIRA_BASE_URL in .env">PROJ-105</span></td>
+      <td>
+        <div class="test-title">TC05: POST /posts — Should create a new post and return 201 Created</div>
+        <div class="test-key">PROJ-105</div>
+      </td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>0.4s</td>
+      <td>0.0s</td>
+      <td><span class="badge badge-a11y-critical">2 (2 crit)</span></td>
+      <td class="timestamp">2:27:33 PM</td>
+      <td style="color:#fca5a5;font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="">—</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;color:var(--text-muted);font-size:12px;font-weight:600">3</td>
+      <td><span class="badge badge-api">🔌 API</span></td>
+      <td><span class="xray-chip-demo" title="Configure JIRA_BASE_URL in .env">PROJ-106</span></td>
+      <td>
+        <div class="test-title">TC06: GET /users/1 — Should return a complete user profile with nested fields</div>
+        <div class="test-key">PROJ-106</div>
+      </td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>0.1s</td>
+      <td>0.0s</td>
+      <td><span class="badge badge-a11y-critical">2 (2 crit)</span></td>
+      <td class="timestamp">2:27:34 PM</td>
+      <td style="color:#fca5a5;font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="">—</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;color:var(--text-muted);font-size:12px;font-weight:600">4</td>
+      <td><span class="badge badge-api">🔌 API</span></td>
+      <td><span class="xray-chip-demo" title="Configure JIRA_BASE_URL in .env">PROJ-109</span></td>
+      <td>
+        <div class="test-title">TC09: Click API tab and verify Playwright Library page title</div>
+        <div class="test-key">PROJ-109</div>
+      </td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>9.1s</td>
+      <td>0.9s</td>
+      <td><span style="color:var(--accent-green);font-size:12px">✅ None</span></td>
+      <td class="timestamp">2:27:54 PM</td>
+      <td style="color:#fca5a5;font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="">—</td>
+    </tr><tr style="background:rgba(99,102,241,0.08);border-top:2px solid var(--accent-blue)">
+          <td colspan="10" style="padding:12px 16px;font-weight:700;font-size:14px;color:var(--accent-cyan);letter-spacing:0.3px">
+            🌐 Playwright.dev Navigation Tests <span style="font-weight:400;font-size:12px;color:var(--text-secondary);margin-left:8px">(4 tests)</span>
+            <span class="badge badge-pass" style="font-size:10px">4/4 PASS</span>
+          </td>
+        </tr>
+    <tr>
+      <td style="text-align:center;color:var(--text-muted);font-size:12px;font-weight:600">5</td>
+      <td><span class="badge badge-ui">🖥️ UI</span></td>
+      <td><span class="xray-chip-demo" title="Configure JIRA_BASE_URL in .env">PROJ-107</span></td>
+      <td>
+        <div class="test-title">TC07: Navigate to Homepage and verify Playwright title</div>
+        <div class="test-key">PROJ-107</div>
+      </td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>9.1s</td>
+      <td>1.1s</td>
+      <td><span style="color:var(--accent-green);font-size:12px">✅ None</span></td>
+      <td class="timestamp">2:27:34 PM</td>
+      <td style="color:#fca5a5;font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="">—</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;color:var(--text-muted);font-size:12px;font-weight:600">6</td>
+      <td><span class="badge badge-ui">🖥️ UI</span></td>
+      <td><span class="xray-chip-demo" title="Configure JIRA_BASE_URL in .env">PROJ-108</span></td>
+      <td>
+        <div class="test-title">TC08: Click Docs tab and verify Installation page title</div>
+        <div class="test-key">PROJ-108</div>
+      </td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>9.7s</td>
+      <td>1.6s</td>
+      <td><span style="color:var(--accent-green);font-size:12px">✅ None</span></td>
+      <td class="timestamp">2:27:44 PM</td>
+      <td style="color:#fca5a5;font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="">—</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;color:var(--text-muted);font-size:12px;font-weight:600">7</td>
+      <td><span class="badge badge-ui">🖥️ UI</span></td>
+      <td><span class="xray-chip-demo" title="Configure JIRA_BASE_URL in .env">PROJ-110</span></td>
+      <td>
+        <div class="test-title">TC10: Click Community tab and verify Welcome page title</div>
+        <div class="test-key">PROJ-110</div>
+      </td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>9.9s</td>
+      <td>1.6s</td>
+      <td><span style="color:var(--accent-green);font-size:12px">✅ None</span></td>
+      <td class="timestamp">2:28:04 PM</td>
+      <td style="color:#fca5a5;font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="">—</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;color:var(--text-muted);font-size:12px;font-weight:600">8</td>
+      <td><span class="badge badge-ui">🖥️ UI</span></td>
+      <td><span class="xray-chip-demo" title="Configure JIRA_BASE_URL in .env">PROJ-111</span></td>
+      <td>
+        <div class="test-title">TC11: Switch to Python language and verify Python page title</div>
+        <div class="test-key">PROJ-111</div>
+      </td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>16.5s</td>
+      <td>—</td>
+      <td><span style="color:var(--accent-green);font-size:12px">✅ None</span></td>
+      <td class="timestamp">2:28:14 PM</td>
+      <td style="color:#fca5a5;font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="">—</td>
+    </tr><tr style="background:rgba(99,102,241,0.08);border-top:2px solid var(--accent-blue)">
+          <td colspan="10" style="padding:12px 16px;font-weight:700;font-size:14px;color:var(--accent-cyan);letter-spacing:0.3px">
+            🔐 Login Feature Tests <span style="font-weight:400;font-size:12px;color:var(--text-secondary);margin-left:8px">(3 tests)</span>
+            <span class="badge badge-pass" style="font-size:10px">3/3 PASS</span>
+          </td>
+        </tr>
+    <tr>
+      <td style="text-align:center;color:var(--text-muted);font-size:12px;font-weight:600">9</td>
+      <td><span class="badge badge-ui">🖥️ UI</span></td>
+      <td><span class="xray-chip-demo" title="Configure JIRA_BASE_URL in .env">PROJ-101</span></td>
+      <td>
+        <div class="test-title">TC01: Valid credentials should log the user in successfully</div>
+        <div class="test-key">PROJ-101</div>
+      </td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>14.1s</td>
+      <td>0.7s</td>
+      <td><span class="badge badge-a11y-critical">1 (1 crit)</span></td>
+      <td class="timestamp">2:27:33 PM</td>
+      <td style="color:#fca5a5;font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="">—</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;color:var(--text-muted);font-size:12px;font-weight:600">10</td>
+      <td><span class="badge badge-ui">🖥️ UI</span></td>
+      <td><span class="xray-chip-demo" title="Configure JIRA_BASE_URL in .env">PROJ-102</span></td>
+      <td>
+        <div class="test-title">TC02: Wrong password should show an error message</div>
+        <div class="test-key">PROJ-102</div>
+      </td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>13.3s</td>
+      <td>0.7s</td>
+      <td><span class="badge badge-a11y-critical">1 (1 crit)</span></td>
+      <td class="timestamp">2:27:47 PM</td>
+      <td style="color:#fca5a5;font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="">—</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;color:var(--text-muted);font-size:12px;font-weight:600">11</td>
+      <td><span class="badge badge-ui">🖥️ UI</span></td>
+      <td><span class="xray-chip-demo" title="Configure JIRA_BASE_URL in .env">PROJ-103</span></td>
+      <td>
+        <div class="test-title">TC03: Empty credentials should show validation errors</div>
+        <div class="test-key">PROJ-103</div>
+      </td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>13.1s</td>
+      <td>0.8s</td>
+      <td><span class="badge badge-a11y-critical">1 (1 crit)</span></td>
+      <td class="timestamp">2:28:00 PM</td>
+      <td style="color:#fca5a5;font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="">—</td>
+    </tr><tr style="background:rgba(99,102,241,0.08);border-top:2px solid var(--accent-blue)">
+          <td colspan="10" style="padding:12px 16px;font-weight:700;font-size:14px;color:var(--accent-cyan);letter-spacing:0.3px">
+            📋 Other Tests <span style="font-weight:400;font-size:12px;color:var(--text-secondary);margin-left:8px">(2 tests)</span>
+            <span class="badge badge-pass" style="font-size:10px">2/2 PASS</span>
+          </td>
+        </tr>
+    <tr>
+      <td style="text-align:center;color:var(--text-muted);font-size:12px;font-weight:600">12</td>
+      <td><span class="badge badge-ui">🖥️ UI</span></td>
+      <td><span class="xray-chip-demo" title="Configure JIRA_BASE_URL in .env">PROJ-112</span></td>
+      <td>
+        <div class="test-title">TC12: Iframe — fill multiple form fields inside a single iframe</div>
+        <div class="test-key">PROJ-112</div>
+      </td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>0.1s</td>
+      <td>0.0s</td>
+      <td><span class="badge badge-a11y-critical">1 (1 crit)</span></td>
+      <td class="timestamp">2:28:14 PM</td>
+      <td style="color:#fca5a5;font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="">—</td>
+    </tr>
+    <tr>
+      <td style="text-align:center;color:var(--text-muted);font-size:12px;font-weight:600">13</td>
+      <td><span class="badge badge-ui">🖥️ UI</span></td>
+      <td><span class="xray-chip-demo" title="Configure JIRA_BASE_URL in .env">PROJ-113</span></td>
+      <td>
+        <div class="test-title">TC13: Iframe — fill fields across TWO iframes and verify</div>
+        <div class="test-key">PROJ-113</div>
+      </td>
+      <td><span class="badge badge-pass">PASS</span></td>
+      <td>0.1s</td>
+      <td>0.0s</td>
+      <td><span class="badge badge-a11y-critical">1 (1 crit)</span></td>
+      <td class="timestamp">2:28:14 PM</td>
+      <td style="color:#fca5a5;font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="">—</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- Failure Screenshots -->
+
+</div>
+
+<!-- =========================================================== -->
+<!-- TAB: PERFORMANCE                                              -->
+<!-- =========================================================== -->
+<div class="tab-content" id="tab-perf">
+<div class="section-title">⚡ Performance Data <span class="count-chip">13 entries</span></div>
+<table>
+  <thead><tr><th>Test</th><th>Type</th><th>Duration</th><th>Page Load</th><th>FCP</th><th>LCP</th><th>Requests</th><th>Data Transfer</th></tr></thead>
+  <tbody>
+    
+    <tr>
+      <td style="font-size:12px">TC04: GET /posts/1 — Should return a valid blog post with correct fields</td>
+      <td><span class="badge badge-api" style="font-size:10px">API</span></td>
+      <td>0.59s</td>
+      <td>0.12s</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC05: POST /posts — Should create a new post and return 201 Created</td>
+      <td><span class="badge badge-api" style="font-size:10px">API</span></td>
+      <td>0.38s</td>
+      <td>0.02s</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC06: GET /users/1 — Should return a complete user profile with nested fields</td>
+      <td><span class="badge badge-api" style="font-size:10px">API</span></td>
+      <td>0.15s</td>
+      <td>0.02s</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC07: Navigate to Homepage and verify Playwright title</td>
+      <td><span class="badge badge-ui" style="font-size:10px">UI</span></td>
+      <td>9.09s</td>
+      <td>1.11s</td>
+      <td>0.41s</td>
+      <td>—</td>
+      <td>31</td>
+      <td>1830.7 KB</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC01: Valid credentials should log the user in successfully</td>
+      <td><span class="badge badge-ui" style="font-size:10px">UI</span></td>
+      <td>14.13s</td>
+      <td>0.66s</td>
+      <td>—</td>
+      <td>—</td>
+      <td>21</td>
+      <td>2213.8 KB</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC08: Click Docs tab and verify Installation page title</td>
+      <td><span class="badge badge-ui" style="font-size:10px">UI</span></td>
+      <td>9.70s</td>
+      <td>1.61s</td>
+      <td>0.61s</td>
+      <td>—</td>
+      <td>53</td>
+      <td>2396.7 KB</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC02: Wrong password should show an error message</td>
+      <td><span class="badge badge-ui" style="font-size:10px">UI</span></td>
+      <td>13.34s</td>
+      <td>0.66s</td>
+      <td>—</td>
+      <td>—</td>
+      <td>21</td>
+      <td>2214.4 KB</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC09: Click API tab and verify Playwright Library page title</td>
+      <td><span class="badge badge-api" style="font-size:10px">API</span></td>
+      <td>9.07s</td>
+      <td>0.88s</td>
+      <td>0.40s</td>
+      <td>—</td>
+      <td>47</td>
+      <td>2041.2 KB</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC03: Empty credentials should show validation errors</td>
+      <td><span class="badge badge-ui" style="font-size:10px">UI</span></td>
+      <td>13.06s</td>
+      <td>0.84s</td>
+      <td>—</td>
+      <td>—</td>
+      <td>21</td>
+      <td>2214.4 KB</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC10: Click Community tab and verify Welcome page title</td>
+      <td><span class="badge badge-ui" style="font-size:10px">UI</span></td>
+      <td>9.93s</td>
+      <td>1.60s</td>
+      <td>0.57s</td>
+      <td>—</td>
+      <td>55</td>
+      <td>2019.9 KB</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC12: Iframe — fill multiple form fields inside a single iframe</td>
+      <td><span class="badge badge-ui" style="font-size:10px">UI</span></td>
+      <td>0.12s</td>
+      <td>0.02s</td>
+      <td>0.03s</td>
+      <td>—</td>
+      <td>1</td>
+      <td>9.3 KB</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC13: Iframe — fill fields across TWO iframes and verify</td>
+      <td><span class="badge badge-ui" style="font-size:10px">UI</span></td>
+      <td>0.14s</td>
+      <td>0.02s</td>
+      <td>0.02s</td>
+      <td>—</td>
+      <td>1</td>
+      <td>9.3 KB</td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC11: Switch to Python language and verify Python page title</td>
+      <td><span class="badge badge-ui" style="font-size:10px">UI</span></td>
+      <td>16.46s</td>
+      <td>—</td>
+      <td>0.45s</td>
+      <td>—</td>
+      <td>37</td>
+      <td>2648.7 KB</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- =========================================================== -->
+<!-- TAB: ACCESSIBILITY                                            -->
+<!-- =========================================================== -->
+<div class="tab-content" id="tab-a11y">
+<div class="section-title">♿ Accessibility Report <span class="count-chip">11 violations</span></div>
+<div class="status-card status-warn" style="margin-bottom:16px"><h4>⚠️ 11 Critical/Serious Accessibility Violations Found</h4><p>These must be fixed before production release. See WCAG 2.1 AA guidelines.</p></div>
+<table>
+  <thead><tr><th>Test</th><th>Violation ID</th><th>Impact</th><th>Description</th><th>Nodes</th><th>Docs</th></tr></thead>
+  <tbody>
+    
+    <tr>
+      <td style="font-size:12px">TC04: GET /posts/1 — Should return a valid blog post with correct fields</td>
+      <td style="font-family:monospace;font-size:11px;color:#a5b4fc">document-title</td>
+      <td><span class="badge badge-a11y-serious">serious</span></td>
+      <td style="font-size:12px;max-width:300px">Ensure each HTML document contains a non-empty &lt;title&gt; element</td>
+      <td style="text-align:center">1</td>
+      <td><a href="https://dequeuniversity.com/rules/axe/4.11/document-title?application=playwright" target="_blank" style="font-size:12px">Docs ↗</a></td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC04: GET /posts/1 — Should return a valid blog post with correct fields</td>
+      <td style="font-family:monospace;font-size:11px;color:#a5b4fc">html-has-lang</td>
+      <td><span class="badge badge-a11y-serious">serious</span></td>
+      <td style="font-size:12px;max-width:300px">Ensure every HTML document has a lang attribute</td>
+      <td style="text-align:center">1</td>
+      <td><a href="https://dequeuniversity.com/rules/axe/4.11/html-has-lang?application=playwright" target="_blank" style="font-size:12px">Docs ↗</a></td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC05: POST /posts — Should create a new post and return 201 Created</td>
+      <td style="font-family:monospace;font-size:11px;color:#a5b4fc">document-title</td>
+      <td><span class="badge badge-a11y-serious">serious</span></td>
+      <td style="font-size:12px;max-width:300px">Ensure each HTML document contains a non-empty &lt;title&gt; element</td>
+      <td style="text-align:center">1</td>
+      <td><a href="https://dequeuniversity.com/rules/axe/4.11/document-title?application=playwright" target="_blank" style="font-size:12px">Docs ↗</a></td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC05: POST /posts — Should create a new post and return 201 Created</td>
+      <td style="font-family:monospace;font-size:11px;color:#a5b4fc">html-has-lang</td>
+      <td><span class="badge badge-a11y-serious">serious</span></td>
+      <td style="font-size:12px;max-width:300px">Ensure every HTML document has a lang attribute</td>
+      <td style="text-align:center">1</td>
+      <td><a href="https://dequeuniversity.com/rules/axe/4.11/html-has-lang?application=playwright" target="_blank" style="font-size:12px">Docs ↗</a></td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC06: GET /users/1 — Should return a complete user profile with nested fields</td>
+      <td style="font-family:monospace;font-size:11px;color:#a5b4fc">document-title</td>
+      <td><span class="badge badge-a11y-serious">serious</span></td>
+      <td style="font-size:12px;max-width:300px">Ensure each HTML document contains a non-empty &lt;title&gt; element</td>
+      <td style="text-align:center">1</td>
+      <td><a href="https://dequeuniversity.com/rules/axe/4.11/document-title?application=playwright" target="_blank" style="font-size:12px">Docs ↗</a></td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC06: GET /users/1 — Should return a complete user profile with nested fields</td>
+      <td style="font-family:monospace;font-size:11px;color:#a5b4fc">html-has-lang</td>
+      <td><span class="badge badge-a11y-serious">serious</span></td>
+      <td style="font-size:12px;max-width:300px">Ensure every HTML document has a lang attribute</td>
+      <td style="text-align:center">1</td>
+      <td><a href="https://dequeuniversity.com/rules/axe/4.11/html-has-lang?application=playwright" target="_blank" style="font-size:12px">Docs ↗</a></td>
+    </tr><tr><td colspan="6" style="color:var(--accent-green);padding:16px;text-align:center;font-size:13px">✅ TC07: Navigate to Homepage and verify Playwright title — No violations</td></tr>
+    <tr>
+      <td style="font-size:12px">TC01: Valid credentials should log the user in successfully</td>
+      <td style="font-family:monospace;font-size:11px;color:#a5b4fc">color-contrast</td>
+      <td><span class="badge badge-a11y-serious">serious</span></td>
+      <td style="font-size:12px;max-width:300px">Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds</td>
+      <td style="text-align:center">1</td>
+      <td><a href="https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright" target="_blank" style="font-size:12px">Docs ↗</a></td>
+    </tr><tr><td colspan="6" style="color:var(--accent-green);padding:16px;text-align:center;font-size:13px">✅ TC08: Click Docs tab and verify Installation page title — No violations</td></tr>
+    <tr>
+      <td style="font-size:12px">TC02: Wrong password should show an error message</td>
+      <td style="font-family:monospace;font-size:11px;color:#a5b4fc">color-contrast</td>
+      <td><span class="badge badge-a11y-serious">serious</span></td>
+      <td style="font-size:12px;max-width:300px">Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds</td>
+      <td style="text-align:center">1</td>
+      <td><a href="https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright" target="_blank" style="font-size:12px">Docs ↗</a></td>
+    </tr><tr><td colspan="6" style="color:var(--accent-green);padding:16px;text-align:center;font-size:13px">✅ TC09: Click API tab and verify Playwright Library page title — No violations</td></tr>
+    <tr>
+      <td style="font-size:12px">TC03: Empty credentials should show validation errors</td>
+      <td style="font-family:monospace;font-size:11px;color:#a5b4fc">color-contrast</td>
+      <td><span class="badge badge-a11y-serious">serious</span></td>
+      <td style="font-size:12px;max-width:300px">Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds</td>
+      <td style="text-align:center">1</td>
+      <td><a href="https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright" target="_blank" style="font-size:12px">Docs ↗</a></td>
+    </tr><tr><td colspan="6" style="color:var(--accent-green);padding:16px;text-align:center;font-size:13px">✅ TC10: Click Community tab and verify Welcome page title — No violations</td></tr>
+    <tr>
+      <td style="font-size:12px">TC12: Iframe — fill multiple form fields inside a single iframe</td>
+      <td style="font-family:monospace;font-size:11px;color:#a5b4fc">color-contrast</td>
+      <td><span class="badge badge-a11y-serious">serious</span></td>
+      <td style="font-size:12px;max-width:300px">Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds</td>
+      <td style="text-align:center">1</td>
+      <td><a href="https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright" target="_blank" style="font-size:12px">Docs ↗</a></td>
+    </tr>
+    <tr>
+      <td style="font-size:12px">TC13: Iframe — fill fields across TWO iframes and verify</td>
+      <td style="font-family:monospace;font-size:11px;color:#a5b4fc">color-contrast</td>
+      <td><span class="badge badge-a11y-serious">serious</span></td>
+      <td style="font-size:12px;max-width:300px">Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds</td>
+      <td style="text-align:center">1</td>
+      <td><a href="https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright" target="_blank" style="font-size:12px">Docs ↗</a></td>
+    </tr><tr><td colspan="6" style="color:var(--accent-green);padding:16px;text-align:center;font-size:13px">✅ TC11: Switch to Python language and verify Python page title — No violations</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- =========================================================== -->
+<!-- TAB: STEP-BY-STEP LOG                                         -->
+<!-- =========================================================== -->
+<div class="tab-content" id="tab-logs">
+<div class="section-title">📝 Step-by-Step Execution Log <span class="count-chip">158 entries</span></div>
+
+<div class="accordion">
+  <div class="accordion-header" onclick="toggleAcc(this)">
+    <div class="acc-title">
+      <span class="badge badge-api" style="font-size:10px">API</span>
+      <span class="badge badge-pass" style="font-size:10px">PASS</span>
+      <span>TC04: GET /posts/1 — Should return a valid blog post with correct fields</span>
+      <span class="xray-chip-demo" style="font-size:10px">PROJ-104</span>
+      <span class="timestamp">(14 steps)</span>
+    </div>
+    <span style="color:var(--text-muted);font-size:18px;transition:transform 0.2s">▼</span>
+  </div>
+  <div class="accordion-body">
+    <div class="log-line log-info">[2026-03-06 08:57:33] [INFO ] 📎 Test linked to XRAY: PROJ-104</div>
+<div class="log-line log-info">[2026-03-06 08:57:33] [INFO ] 📂 Test data loaded from api-tests.yaml for PROJ-104</div>
+<div class="log-line log-step">[2026-03-06 08:57:33] [STEP ] Step 1: Send GET request to /posts/1</div>
+<div class="log-line log-info">[2026-03-06 08:57:33] [INFO ] Response received — Status: 200, Duration: 410ms</div>
+<div class="log-line log-step">[2026-03-06 08:57:33] [STEP ] Step 2: Validate HTTP status is 200</div>
+<div class="log-line log-info">[2026-03-06 08:57:33] [INFO ] ✅ Status 200 confirmed</div>
+<div class="log-line log-step">[2026-03-06 08:57:33] [STEP ] Step 3: Validate response body structure</div>
+<div class="log-line log-info">[2026-03-06 08:57:33] [INFO ] ✅ All required fields present: id, userId, title, body</div>
+<div class="log-line log-step">[2026-03-06 08:57:33] [STEP ] Step 4: Validate field values are correct</div>
+<div class="log-line log-info">[2026-03-06 08:57:33] [INFO ] ✅ Post ID: 1</div>
+<div class="log-line log-info">[2026-03-06 08:57:33] [INFO ] ✅ Post Title: &quot;sunt aut facere repellat provident occaecati excepturi optio reprehenderit&quot;</div>
+<div class="log-line log-pass">[2026-03-06 08:57:33] [PASS ] TC04 passed — GET /posts/1 returned valid post (410ms)</div>
+<div class="log-line log-warn">[2026-03-06 08:57:33] [WARN ] ♿ Accessibility: 2 violation(s) (2 critical/serious)</div>
+<div class="log-line log-pass">[2026-03-06 08:57:33] [PASS ] [PROJ-104] TC04: GET /posts/1 — Should return a valid blog post with correct fields</div>
+  </div>
+</div>
+<div class="accordion">
+  <div class="accordion-header" onclick="toggleAcc(this)">
+    <div class="acc-title">
+      <span class="badge badge-api" style="font-size:10px">API</span>
+      <span class="badge badge-pass" style="font-size:10px">PASS</span>
+      <span>TC05: POST /posts — Should create a new post and return 201 Created</span>
+      <span class="xray-chip-demo" style="font-size:10px">PROJ-105</span>
+      <span class="timestamp">(14 steps)</span>
+    </div>
+    <span style="color:var(--text-muted);font-size:18px;transition:transform 0.2s">▼</span>
+  </div>
+  <div class="accordion-body">
+    <div class="log-line log-info">[2026-03-06 08:57:33] [INFO ] 📎 Test linked to XRAY: PROJ-105</div>
+<div class="log-line log-info">[2026-03-06 08:57:33] [INFO ] 📂 Test data loaded from api-tests.yaml for PROJ-105</div>
+<div class="log-line log-step">[2026-03-06 08:57:33] [STEP ] Step 1: Prepare new post payload</div>
+<div class="log-line log-info">[2026-03-06 08:57:33] [INFO ] Sending payload: {&quot;title&quot;:&quot;Demo Post Created by Playwright API Test&quot;,&quot;body&quot;:&quot;This post was created automatically by our test framework to verify the POST endpoint works correctly.&quot;,&quot;userId&quot;:1}</div>
+<div class="log-line log-step">[2026-03-06 08:57:33] [STEP ] Step 2: Send POST request to /posts</div>
+<div class="log-line log-info">[2026-03-06 08:57:34] [INFO ] Response received — Status: 201, Duration: 352ms</div>
+<div class="log-line log-step">[2026-03-06 08:57:34] [STEP ] Step 3: Validate HTTP status is 201 Created</div>
+<div class="log-line log-info">[2026-03-06 08:57:34] [INFO ] ✅ Status 201 Created confirmed</div>
+<div class="log-line log-step">[2026-03-06 08:57:34] [STEP ] Step 4: Validate server echoed data and assigned new ID</div>
+<div class="log-line log-info">[2026-03-06 08:57:34] [INFO ] ✅ Post created with ID: 101</div>
+<div class="log-line log-info">[2026-03-06 08:57:34] [INFO ] ✅ Title echoed back: &quot;Demo Post Created by Playwright API Test&quot;</div>
+<div class="log-line log-pass">[2026-03-06 08:57:34] [PASS ] TC05 passed — POST /posts returned 201 Created with id=101 (352ms)</div>
+<div class="log-line log-warn">[2026-03-06 08:57:34] [WARN ] ♿ Accessibility: 2 violation(s) (2 critical/serious)</div>
+<div class="log-line log-pass">[2026-03-06 08:57:34] [PASS ] [PROJ-105] TC05: POST /posts — Should create a new post and return 201 Created</div>
+  </div>
+</div>
+<div class="accordion">
+  <div class="accordion-header" onclick="toggleAcc(this)">
+    <div class="acc-title">
+      <span class="badge badge-api" style="font-size:10px">API</span>
+      <span class="badge badge-pass" style="font-size:10px">PASS</span>
+      <span>TC06: GET /users/1 — Should return a complete user profile with nested fields</span>
+      <span class="xray-chip-demo" style="font-size:10px">PROJ-106</span>
+      <span class="timestamp">(18 steps)</span>
+    </div>
+    <span style="color:var(--text-muted);font-size:18px;transition:transform 0.2s">▼</span>
+  </div>
+  <div class="accordion-body">
+    <div class="log-line log-info">[2026-03-06 08:57:34] [INFO ] 📎 Test linked to XRAY: PROJ-106</div>
+<div class="log-line log-info">[2026-03-06 08:57:34] [INFO ] 📂 Test data loaded from api-tests.yaml for PROJ-106</div>
+<div class="log-line log-step">[2026-03-06 08:57:34] [STEP ] Step 1: Send GET request to /users/1</div>
+<div class="log-line log-info">[2026-03-06 08:57:34] [INFO ] Response received — Status: 200, Duration: 122ms</div>
+<div class="log-line log-step">[2026-03-06 08:57:34] [STEP ] Step 2: Validate HTTP status is 200</div>
+<div class="log-line log-info">[2026-03-06 08:57:34] [INFO ] ✅ Status 200 OK confirmed</div>
+<div class="log-line log-step">[2026-03-06 08:57:34] [STEP ] Step 3: Validate top-level user fields</div>
+<div class="log-line log-info">[2026-03-06 08:57:34] [INFO ] ✅ User ID:    1</div>
+<div class="log-line log-info">[2026-03-06 08:57:34] [INFO ] ✅ User Name:  Leanne Graham</div>
+<div class="log-line log-info">[2026-03-06 08:57:34] [INFO ] ✅ Email:      Sincere@april.biz</div>
+<div class="log-line log-info">[2026-03-06 08:57:34] [INFO ] ✅ Phone:      1-770-736-8031 x56442</div>
+<div class="log-line log-step">[2026-03-06 08:57:34] [STEP ] Step 4: Validate nested address object</div>
+<div class="log-line log-info">[2026-03-06 08:57:34] [INFO ] ✅ address fields validated: street, city, zipcode</div>
+<div class="log-line log-step">[2026-03-06 08:57:34] [STEP ] Step 5: Validate nested company object</div>
+<div class="log-line log-info">[2026-03-06 08:57:34] [INFO ] ✅ company fields validated: name, catchPhrase</div>
+<div class="log-line log-pass">[2026-03-06 08:57:34] [PASS ] TC06 passed — GET /users/1 returned full user profile (122ms)</div>
+<div class="log-line log-warn">[2026-03-06 08:57:34] [WARN ] ♿ Accessibility: 2 violation(s) (2 critical/serious)</div>
+<div class="log-line log-pass">[2026-03-06 08:57:34] [PASS ] [PROJ-106] TC06: GET /users/1 — Should return a complete user profile with nested fields</div>
+  </div>
+</div>
+<div class="accordion">
+  <div class="accordion-header" onclick="toggleAcc(this)">
+    <div class="acc-title">
+      <span class="badge badge-ui" style="font-size:10px">UI</span>
+      <span class="badge badge-pass" style="font-size:10px">PASS</span>
+      <span>TC07: Navigate to Homepage and verify Playwright title</span>
+      <span class="xray-chip-demo" style="font-size:10px">PROJ-107</span>
+      <span class="timestamp">(9 steps)</span>
+    </div>
+    <span style="color:var(--text-muted);font-size:18px;transition:transform 0.2s">▼</span>
+  </div>
+  <div class="accordion-body">
+    <div class="log-line log-info">[2026-03-06 08:57:34] [INFO ] 📎 Test linked to XRAY: PROJ-107</div>
+<div class="log-line log-info">[2026-03-06 08:57:34] [INFO ] 📂 Test data loaded from ui-tests.yaml for PROJ-107</div>
+<div class="log-line log-step">[2026-03-06 08:57:34] [STEP ] Step 1: Navigate to the Playwright.dev homepage</div>
+<div class="log-line log-step">[2026-03-06 08:57:43] [STEP ] Step 2: Verify page title contains &quot;Playwright&quot;</div>
+<div class="log-line log-step">[2026-03-06 08:57:43] [STEP ] Step 3: Verify homepage heading text</div>
+<div class="log-line log-step">[2026-03-06 08:57:43] [STEP ] Step 4: Verify URL contains &quot;playwright.dev&quot;</div>
+<div class="log-line log-pass">[2026-03-06 08:57:43] [PASS ] TC07 passed — Homepage loaded with correct title and heading</div>
+<div class="log-line log-pass">[2026-03-06 08:57:44] [PASS ] ♿ Accessibility: No violations found</div>
+<div class="log-line log-pass">[2026-03-06 08:57:44] [PASS ] [PROJ-107] TC07: Navigate to Homepage and verify Playwright title</div>
+  </div>
+</div>
+<div class="accordion">
+  <div class="accordion-header" onclick="toggleAcc(this)">
+    <div class="acc-title">
+      <span class="badge badge-ui" style="font-size:10px">UI</span>
+      <span class="badge badge-pass" style="font-size:10px">PASS</span>
+      <span>TC01: Valid credentials should log the user in successfully</span>
+      <span class="xray-chip-demo" style="font-size:10px">PROJ-101</span>
+      <span class="timestamp">(8 steps)</span>
+    </div>
+    <span style="color:var(--text-muted);font-size:18px;transition:transform 0.2s">▼</span>
+  </div>
+  <div class="accordion-body">
+    <div class="log-line log-info">[2026-03-06 08:57:33] [INFO ] 📎 Test linked to XRAY: PROJ-101</div>
+<div class="log-line log-info">[2026-03-06 08:57:33] [INFO ] 📂 Test data loaded from ui-tests.yaml for PROJ-101</div>
+<div class="log-line log-step">[2026-03-06 08:57:33] [STEP ] Step 1: Navigate to the login page</div>
+<div class="log-line log-step">[2026-03-06 08:57:46] [STEP ] Step 2: Enter valid credentials and submit</div>
+<div class="log-line log-step">[2026-03-06 08:57:47] [STEP ] Step 3: Verify user is now on the Secure Area page</div>
+<div class="log-line log-pass">[2026-03-06 08:57:47] [PASS ] TC01 passed — User logged in successfully</div>
+<div class="log-line log-warn">[2026-03-06 08:57:47] [WARN ] ♿ Accessibility: 1 violation(s) (1 critical/serious)</div>
+<div class="log-line log-pass">[2026-03-06 08:57:47] [PASS ] [PROJ-101] TC01: Valid credentials should log the user in successfully</div>
+  </div>
+</div>
+<div class="accordion">
+  <div class="accordion-header" onclick="toggleAcc(this)">
+    <div class="acc-title">
+      <span class="badge badge-ui" style="font-size:10px">UI</span>
+      <span class="badge badge-pass" style="font-size:10px">PASS</span>
+      <span>TC08: Click Docs tab and verify Installation page title</span>
+      <span class="xray-chip-demo" style="font-size:10px">PROJ-108</span>
+      <span class="timestamp">(10 steps)</span>
+    </div>
+    <span style="color:var(--text-muted);font-size:18px;transition:transform 0.2s">▼</span>
+  </div>
+  <div class="accordion-body">
+    <div class="log-line log-info">[2026-03-06 08:57:44] [INFO ] 📎 Test linked to XRAY: PROJ-108</div>
+<div class="log-line log-info">[2026-03-06 08:57:44] [INFO ] 📂 Test data loaded from ui-tests.yaml for PROJ-108</div>
+<div class="log-line log-step">[2026-03-06 08:57:44] [STEP ] Step 1: Navigate to the homepage</div>
+<div class="log-line log-step">[2026-03-06 08:57:53] [STEP ] Step 2: Click the &quot;Docs&quot; navigation tab</div>
+<div class="log-line log-step">[2026-03-06 08:57:53] [STEP ] Step 3: Verify page title contains &quot;Installation&quot;</div>
+<div class="log-line log-step">[2026-03-06 08:57:53] [STEP ] Step 4: Verify heading text is &quot;Installation&quot;</div>
+<div class="log-line log-step">[2026-03-06 08:57:53] [STEP ] Step 5: Verify URL contains &quot;/docs/intro&quot;</div>
+<div class="log-line log-pass">[2026-03-06 08:57:53] [PASS ] TC08 passed — Docs tab navigated to Installation page</div>
+<div class="log-line log-pass">[2026-03-06 08:57:54] [PASS ] ♿ Accessibility: No violations found</div>
+<div class="log-line log-pass">[2026-03-06 08:57:54] [PASS ] [PROJ-108] TC08: Click Docs tab and verify Installation page title</div>
+  </div>
+</div>
+<div class="accordion">
+  <div class="accordion-header" onclick="toggleAcc(this)">
+    <div class="acc-title">
+      <span class="badge badge-ui" style="font-size:10px">UI</span>
+      <span class="badge badge-pass" style="font-size:10px">PASS</span>
+      <span>TC02: Wrong password should show an error message</span>
+      <span class="xray-chip-demo" style="font-size:10px">PROJ-102</span>
+      <span class="timestamp">(9 steps)</span>
+    </div>
+    <span style="color:var(--text-muted);font-size:18px;transition:transform 0.2s">▼</span>
+  </div>
+  <div class="accordion-body">
+    <div class="log-line log-info">[2026-03-06 08:57:47] [INFO ] 📎 Test linked to XRAY: PROJ-102</div>
+<div class="log-line log-info">[2026-03-06 08:57:47] [INFO ] 📂 Test data loaded from ui-tests.yaml for PROJ-102</div>
+<div class="log-line log-step">[2026-03-06 08:57:47] [STEP ] Step 1: Navigate to the login page</div>
+<div class="log-line log-step">[2026-03-06 08:57:59] [STEP ] Step 2: Enter valid username but wrong password</div>
+<div class="log-line log-step">[2026-03-06 08:58:00] [STEP ] Step 3: Verify error message is displayed</div>
+<div class="log-line log-step">[2026-03-06 08:58:00] [STEP ] Step 4: Verify user is still on the login page</div>
+<div class="log-line log-pass">[2026-03-06 08:58:00] [PASS ] TC02 passed — Error message shown for wrong password</div>
+<div class="log-line log-warn">[2026-03-06 08:58:00] [WARN ] ♿ Accessibility: 1 violation(s) (1 critical/serious)</div>
+<div class="log-line log-pass">[2026-03-06 08:58:00] [PASS ] [PROJ-102] TC02: Wrong password should show an error message</div>
+  </div>
+</div>
+<div class="accordion">
+  <div class="accordion-header" onclick="toggleAcc(this)">
+    <div class="acc-title">
+      <span class="badge badge-api" style="font-size:10px">API</span>
+      <span class="badge badge-pass" style="font-size:10px">PASS</span>
+      <span>TC09: Click API tab and verify Playwright Library page title</span>
+      <span class="xray-chip-demo" style="font-size:10px">PROJ-109</span>
+      <span class="timestamp">(10 steps)</span>
+    </div>
+    <span style="color:var(--text-muted);font-size:18px;transition:transform 0.2s">▼</span>
+  </div>
+  <div class="accordion-body">
+    <div class="log-line log-info">[2026-03-06 08:57:54] [INFO ] 📎 Test linked to XRAY: PROJ-109</div>
+<div class="log-line log-info">[2026-03-06 08:57:54] [INFO ] 📂 Test data loaded from ui-tests.yaml for PROJ-109</div>
+<div class="log-line log-step">[2026-03-06 08:57:54] [STEP ] Step 1: Navigate to the homepage</div>
+<div class="log-line log-step">[2026-03-06 08:58:03] [STEP ] Step 2: Click the &quot;API&quot; navigation tab</div>
+<div class="log-line log-step">[2026-03-06 08:58:03] [STEP ] Step 3: Verify page title contains &quot;Playwright Library&quot;</div>
+<div class="log-line log-step">[2026-03-06 08:58:03] [STEP ] Step 4: Verify heading text is &quot;Playwright Library&quot;</div>
+<div class="log-line log-step">[2026-03-06 08:58:03] [STEP ] Step 5: Verify URL contains &quot;/docs/api/class-playwright&quot;</div>
+<div class="log-line log-pass">[2026-03-06 08:58:03] [PASS ] TC09 passed — API tab navigated to Playwright Library page</div>
+<div class="log-line log-pass">[2026-03-06 08:58:04] [PASS ] ♿ Accessibility: No violations found</div>
+<div class="log-line log-pass">[2026-03-06 08:58:04] [PASS ] [PROJ-109] TC09: Click API tab and verify Playwright Library page title</div>
+  </div>
+</div>
+<div class="accordion">
+  <div class="accordion-header" onclick="toggleAcc(this)">
+    <div class="acc-title">
+      <span class="badge badge-ui" style="font-size:10px">UI</span>
+      <span class="badge badge-pass" style="font-size:10px">PASS</span>
+      <span>TC03: Empty credentials should show validation errors</span>
+      <span class="xray-chip-demo" style="font-size:10px">PROJ-103</span>
+      <span class="timestamp">(9 steps)</span>
+    </div>
+    <span style="color:var(--text-muted);font-size:18px;transition:transform 0.2s">▼</span>
+  </div>
+  <div class="accordion-body">
+    <div class="log-line log-info">[2026-03-06 08:58:00] [INFO ] 📎 Test linked to XRAY: PROJ-103</div>
+<div class="log-line log-info">[2026-03-06 08:58:00] [INFO ] 📂 Test data loaded from ui-tests.yaml for PROJ-103</div>
+<div class="log-line log-step">[2026-03-06 08:58:00] [STEP ] Step 1: Navigate to the login page</div>
+<div class="log-line log-step">[2026-03-06 08:58:13] [STEP ] Step 2: Click login button without entering credentials</div>
+<div class="log-line log-step">[2026-03-06 08:58:13] [STEP ] Step 3: Verify validation flash message is shown</div>
+<div class="log-line log-info">[2026-03-06 08:58:13] [INFO ] Validation confirmed: empty credentials rejected, URL is still: https://the-internet.herokuapp.com/login</div>
+<div class="log-line log-pass">[2026-03-06 08:58:13] [PASS ] TC03 passed — Empty credentials correctly rejected</div>
+<div class="log-line log-warn">[2026-03-06 08:58:14] [WARN ] ♿ Accessibility: 1 violation(s) (1 critical/serious)</div>
+<div class="log-line log-pass">[2026-03-06 08:58:14] [PASS ] [PROJ-103] TC03: Empty credentials should show validation errors</div>
+  </div>
+</div>
+<div class="accordion">
+  <div class="accordion-header" onclick="toggleAcc(this)">
+    <div class="acc-title">
+      <span class="badge badge-ui" style="font-size:10px">UI</span>
+      <span class="badge badge-pass" style="font-size:10px">PASS</span>
+      <span>TC10: Click Community tab and verify Welcome page title</span>
+      <span class="xray-chip-demo" style="font-size:10px">PROJ-110</span>
+      <span class="timestamp">(10 steps)</span>
+    </div>
+    <span style="color:var(--text-muted);font-size:18px;transition:transform 0.2s">▼</span>
+  </div>
+  <div class="accordion-body">
+    <div class="log-line log-info">[2026-03-06 08:58:04] [INFO ] 📎 Test linked to XRAY: PROJ-110</div>
+<div class="log-line log-info">[2026-03-06 08:58:04] [INFO ] 📂 Test data loaded from ui-tests.yaml for PROJ-110</div>
+<div class="log-line log-step">[2026-03-06 08:58:04] [STEP ] Step 1: Navigate to the homepage</div>
+<div class="log-line log-step">[2026-03-06 08:58:13] [STEP ] Step 2: Click the &quot;Community&quot; navigation tab</div>
+<div class="log-line log-step">[2026-03-06 08:58:13] [STEP ] Step 3: Verify page title contains &quot;Welcome&quot;</div>
+<div class="log-line log-step">[2026-03-06 08:58:14] [STEP ] Step 4: Verify heading text is &quot;Welcome&quot;</div>
+<div class="log-line log-step">[2026-03-06 08:58:14] [STEP ] Step 5: Verify URL contains &quot;/community/welcome&quot;</div>
+<div class="log-line log-pass">[2026-03-06 08:58:14] [PASS ] TC10 passed — Community tab navigated to Welcome page</div>
+<div class="log-line log-pass">[2026-03-06 08:58:14] [PASS ] ♿ Accessibility: No violations found</div>
+<div class="log-line log-pass">[2026-03-06 08:58:14] [PASS ] [PROJ-110] TC10: Click Community tab and verify Welcome page title</div>
+  </div>
+</div>
+<div class="accordion">
+  <div class="accordion-header" onclick="toggleAcc(this)">
+    <div class="acc-title">
+      <span class="badge badge-ui" style="font-size:10px">UI</span>
+      <span class="badge badge-pass" style="font-size:10px">PASS</span>
+      <span>TC12: Iframe — fill multiple form fields inside a single iframe</span>
+      <span class="xray-chip-demo" style="font-size:10px">PROJ-112</span>
+      <span class="timestamp">(18 steps)</span>
+    </div>
+    <span style="color:var(--text-muted);font-size:18px;transition:transform 0.2s">▼</span>
+  </div>
+  <div class="accordion-body">
+    <div class="log-line log-info">[2026-03-06 08:58:14] [INFO ] 📎 Test linked to XRAY: PROJ-112</div>
+<div class="log-line log-info">[2026-03-06 08:58:14] [INFO ] 📂 Test data loaded from ui-tests.yaml for PROJ-112</div>
+<div class="log-line log-step">[2026-03-06 08:58:14] [STEP ] Step 1: Navigate to the iframe fixture page</div>
+<div class="log-line log-info">[2026-03-06 08:58:14] [INFO ] ✅ Page loaded</div>
+<div class="log-line log-step">[2026-03-06 08:58:14] [STEP ] Step 2: Verify main-page heading (outside iframe)</div>
+<div class="log-line log-info">[2026-03-06 08:58:14] [INFO ] ✅ Main-page heading verified</div>
+<div class="log-line log-step">[2026-03-06 08:58:14] [STEP ] Step 3: Get iframe handle for Lead Information</div>
+<div class="log-line log-step">[2026-03-06 08:58:14] [STEP ] Step 4: Verify First Name field visible inside iframe</div>
+<div class="log-line log-info">[2026-03-06 08:58:14] [INFO ] ✅ First Name field is visible inside iframe</div>
+<div class="log-line log-step">[2026-03-06 08:58:14] [STEP ] Step 5: Fill all lead form fields inside iframe</div>
+<div class="log-line log-info">[2026-03-06 08:58:14] [INFO ] ✅ All 7 lead fields filled inside iframe</div>
+<div class="log-line log-step">[2026-03-06 08:58:14] [STEP ] Step 6: Read back and verify field values</div>
+<div class="log-line log-info">[2026-03-06 08:58:14] [INFO ] ✅ Verified — First: John, Last: Doe, Company: Acme Corp</div>
+<div class="log-line log-step">[2026-03-06 08:58:14] [STEP ] Step 7: Verify main-page heading still accessible (no switch needed)</div>
+<div class="log-line log-info">[2026-03-06 08:58:14] [INFO ] ✅ Main-page still accessible — no iframe switch-back needed</div>
+<div class="log-line log-pass">[2026-03-06 08:58:14] [PASS ] TC12 passed — filled &amp; verified 7 fields inside a single iframe</div>
+<div class="log-line log-warn">[2026-03-06 08:58:14] [WARN ] ♿ Accessibility: 1 violation(s) (1 critical/serious)</div>
+<div class="log-line log-pass">[2026-03-06 08:58:14] [PASS ] [PROJ-112] TC12: Iframe — fill multiple form fields inside a single iframe</div>
+  </div>
+</div>
+<div class="accordion">
+  <div class="accordion-header" onclick="toggleAcc(this)">
+    <div class="acc-title">
+      <span class="badge badge-ui" style="font-size:10px">UI</span>
+      <span class="badge badge-pass" style="font-size:10px">PASS</span>
+      <span>TC13: Iframe — fill fields across TWO iframes and verify</span>
+      <span class="xray-chip-demo" style="font-size:10px">PROJ-113</span>
+      <span class="timestamp">(20 steps)</span>
+    </div>
+    <span style="color:var(--text-muted);font-size:18px;transition:transform 0.2s">▼</span>
+  </div>
+  <div class="accordion-body">
+    <div class="log-line log-info">[2026-03-06 08:58:14] [INFO ] 📎 Test linked to XRAY: PROJ-113</div>
+<div class="log-line log-info">[2026-03-06 08:58:14] [INFO ] 📂 Test data loaded from ui-tests.yaml for PROJ-113</div>
+<div class="log-line log-step">[2026-03-06 08:58:14] [STEP ] Step 1: Navigate to the iframe fixture page</div>
+<div class="log-line log-step">[2026-03-06 08:58:14] [STEP ] Step 2: Get frame handles for BOTH iframes</div>
+<div class="log-line log-info">[2026-03-06 08:58:14] [INFO ] ✅ Got handles for Lead iframe + Contact iframe</div>
+<div class="log-line log-step">[2026-03-06 08:58:14] [STEP ] Step 3: Fill lead fields in iframe #1</div>
+<div class="log-line log-info">[2026-03-06 08:58:14] [INFO ] ✅ Lead fields filled in iframe #1</div>
+<div class="log-line log-step">[2026-03-06 08:58:14] [STEP ] Step 4: Fill contact fields in iframe #2</div>
+<div class="log-line log-info">[2026-03-06 08:58:14] [INFO ] ✅ Contact fields filled in iframe #2</div>
+<div class="log-line log-step">[2026-03-06 08:58:14] [STEP ] Step 5: Click Save button inside iframe #2</div>
+<div class="log-line log-info">[2026-03-06 08:58:14] [INFO ] ✅ Save button clicked inside iframe #2</div>
+<div class="log-line log-step">[2026-03-06 08:58:14] [STEP ] Step 6: Verify success message in iframe #2</div>
+<div class="log-line log-info">[2026-03-06 08:58:14] [INFO ] ✅ Success message verified inside iframe #2</div>
+<div class="log-line log-step">[2026-03-06 08:58:14] [STEP ] Step 7: Verify lead fields still populated in iframe #1</div>
+<div class="log-line log-info">[2026-03-06 08:58:14] [INFO ] ✅ Iframe #1 fields still correct — First: Jane, Company: Global Tech Inc</div>
+<div class="log-line log-step">[2026-03-06 08:58:14] [STEP ] Step 8: Verify main-page heading (outside iframes)</div>
+<div class="log-line log-info">[2026-03-06 08:58:14] [INFO ] ✅ Main-page heading verified — seamless multi-iframe test done</div>
+<div class="log-line log-pass">[2026-03-06 08:58:14] [PASS ] TC13 passed — filled &amp; verified fields across TWO iframes + main page</div>
+<div class="log-line log-warn">[2026-03-06 08:58:14] [WARN ] ♿ Accessibility: 1 violation(s) (1 critical/serious)</div>
+<div class="log-line log-pass">[2026-03-06 08:58:14] [PASS ] [PROJ-113] TC13: Iframe — fill fields across TWO iframes and verify</div>
+  </div>
+</div>
+<div class="accordion">
+  <div class="accordion-header" onclick="toggleAcc(this)">
+    <div class="acc-title">
+      <span class="badge badge-ui" style="font-size:10px">UI</span>
+      <span class="badge badge-pass" style="font-size:10px">PASS</span>
+      <span>TC11: Switch to Python language and verify Python page title</span>
+      <span class="xray-chip-demo" style="font-size:10px">PROJ-111</span>
+      <span class="timestamp">(9 steps)</span>
+    </div>
+    <span style="color:var(--text-muted);font-size:18px;transition:transform 0.2s">▼</span>
+  </div>
+  <div class="accordion-body">
+    <div class="log-line log-info">[2026-03-06 08:58:14] [INFO ] 📎 Test linked to XRAY: PROJ-111</div>
+<div class="log-line log-info">[2026-03-06 08:58:14] [INFO ] 📂 Test data loaded from ui-tests.yaml for PROJ-111</div>
+<div class="log-line log-step">[2026-03-06 08:58:14] [STEP ] Step 1: Navigate to the homepage</div>
+<div class="log-line log-step">[2026-03-06 08:58:28] [STEP ] Step 2: Open language dropdown and select &quot;Python&quot;</div>
+<div class="log-line log-step">[2026-03-06 08:58:30] [STEP ] Step 3: Verify page title contains &quot;Playwright Python&quot;</div>
+<div class="log-line log-step">[2026-03-06 08:58:30] [STEP ] Step 4: Verify URL contains &quot;/python/&quot;</div>
+<div class="log-line log-pass">[2026-03-06 08:58:30] [PASS ] TC11 passed — Language switched to Python successfully</div>
+<div class="log-line log-pass">[2026-03-06 08:58:31] [PASS ] ♿ Accessibility: No violations found</div>
+<div class="log-line log-pass">[2026-03-06 08:58:31] [PASS ] [PROJ-111] TC11: Switch to Python language and verify Python page title</div>
+  </div>
+</div>
+</div>
+
+<!-- =========================================================== -->
+<!-- TAB: SECURITY                                                 -->
+<!-- =========================================================== -->
+<div class="tab-content" id="tab-security">
+<div class="section-title">🔐 Security & Vulnerability Notes</div>
+<div class="status-card status-ok">
+  <h4>✅ Credential Management — AES-256 Encryption</h4>
+  <p>All passwords stored as encrypted values (AES-256-CBC) in <code>.env</code>. Plain text passwords never committed to source control.</p>
+</div>
+<div class="status-card status-ok">
+  <h4>✅ SQL Injection Prevention — Parameterised Queries</h4>
+  <p>All database queries use parameterised queries (<code>$1, $2</code> placeholders) — never string concatenation. Per OWASP A03:2021.</p>
+</div>
+<div class="status-card status-ok">
+  <h4>✅ Secure Database Connections — SSL/TLS</h4>
+  <p>Database connections support SSL/TLS (<code>DB_SSL=true</code>). Production always has SSL enabled.</p>
+</div>
+<div class="status-card status-ok">
+  <h4>✅ XRAY / JIRA API — Token-Based Auth</h4>
+  <p>JIRA API uses Atlassian API tokens (not passwords). Tokens can be revoked independently.</p>
+</div>
+<div class="status-card status-info">
+  <h4>ℹ️ Dependency Audit</h4>
+  <p>Run <code>npm audit</code> regularly for known CVEs. Run <code>npm audit fix</code> for safe auto-fixes.</p>
+</div>
+<div class="status-card status-ok">
+  <h4>✅ Test Failure Analysis</h4>
+  <p>All tests passed. No security-related failures detected.</p>
+</div>
+</div>
+
+<!-- =========================================================== -->
+<!-- FOOTER                                                        -->
+<!-- =========================================================== -->
+<div class="footer">
+  <p>Generated by <strong>Playwright AutoAgent</strong> • 2026-03-06 • 13 tests • 100% pass rate</p>
+  <p style="margin-top:4px">Built with ❤️ using Playwright AutoAgent – AI Automation Framework</p>
+</div>
+
+</div><!-- /container -->
+
+<!-- =========================================================== -->
+<!-- SCRIPTS                                                       -->
+<!-- =========================================================== -->
+<script>
+// ---- TAB SWITCHING ----
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  event.target.classList.add('active');
+  // Re-render charts when Charts tab is opened (fixes canvas sizing)
+  if (tabId === 'tab-charts') { setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 50); }
+}
+
+// ---- CHART.JS ----
+Chart.defaults.color = '#64748b';
+Chart.defaults.borderColor = 'rgba(45,53,85,0.5)';
+
+new Chart(document.getElementById('pieChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Passed', 'Failed', 'Aborted'],
+    datasets: [{
+      data: [13, 0, 0],
+      backgroundColor: ['#22c55e','#ef4444','#f59e0b'],
+      borderWidth: 3, borderColor: 'var(--bg-primary)',
+      hoverOffset: 8
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '55%',
+    plugins: {
+      legend: { position: 'bottom', labels: { padding: 16, font: { size: 12 }, usePointStyle: true, pointStyle: 'circle' } }
+    }
+  }
+});
+
+new Chart(document.getElementById('durationChart'), {
+  type: 'bar',
+  data: {
+    labels: ["PROJ-104","PROJ-105","PROJ-106","PROJ-107","PROJ-101","PROJ-108","PROJ-102","PROJ-109","PROJ-103","PROJ-110","PROJ-112","PROJ-113","PROJ-111"],
+    datasets: [{
+      label: 'Duration (s)', data: [0.59,0.38,0.15,9.09,14.13,9.7,13.34,9.07,13.06,9.93,0.12,0.14,16.46],
+      backgroundColor: 'rgba(99,102,241,0.6)', borderColor: '#6366f1', borderWidth: 1, borderRadius: 8,
+      hoverBackgroundColor: 'rgba(99,102,241,0.8)'
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    scales: { y: { beginAtZero: true, grid: { color: 'rgba(45,53,85,0.3)' } }, x: { grid: { display: false } } },
+    plugins: { legend: { display: false } }
+  }
+});
+
+new Chart(document.getElementById('loadChart'), {
+  type: 'bar',
+  data: {
+    labels: ["PROJ-104","PROJ-105","PROJ-106","PROJ-107","PROJ-101","PROJ-108","PROJ-102","PROJ-109","PROJ-103","PROJ-110","PROJ-112","PROJ-113","PROJ-111"],
+    datasets: [{
+      label: 'Load Time (s)', data: [0.12,0.02,0.02,1.11,0.66,1.61,0.66,0.88,0.84,1.6,0.02,0.02,0],
+      backgroundColor: 'rgba(167,139,250,0.6)', borderColor: '#a78bfa', borderWidth: 1, borderRadius: 8,
+      hoverBackgroundColor: 'rgba(167,139,250,0.8)'
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    scales: { y: { beginAtZero: true, grid: { color: 'rgba(45,53,85,0.3)' } }, x: { grid: { display: false } } },
+    plugins: { legend: { display: false } }
+  }
+});
+
+const histColors = ["rgba(34,197,94,0.6)","rgba(34,197,94,0.6)","rgba(34,197,94,0.6)","rgba(34,197,94,0.6)","rgba(34,197,94,0.6)","rgba(34,197,94,0.6)","rgba(34,197,94,0.6)","rgba(34,197,94,0.6)","rgba(34,197,94,0.6)","rgba(34,197,94,0.6)","rgba(34,197,94,0.6)","rgba(34,197,94,0.6)","rgba(34,197,94,0.6)"];
+new Chart(document.getElementById('histChart'), {
+  type: 'bar',
+  data: {
+    labels: ["PROJ-104","PROJ-105","PROJ-106","PROJ-107","PROJ-101","PROJ-108","PROJ-102","PROJ-109","PROJ-103","PROJ-110","PROJ-112","PROJ-113","PROJ-111"],
+    datasets: [{ label: 'Result', data: [1,1,1,1,1,1,1,1,1,1,1,1,1], backgroundColor: histColors, borderRadius: 8, borderWidth: 1, borderColor: ["#22c55e","#22c55e","#22c55e","#22c55e","#22c55e","#22c55e","#22c55e","#22c55e","#22c55e","#22c55e","#22c55e","#22c55e","#22c55e"] }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    scales: { y: { min: 0, max: 1, ticks: { callback: v => v === 1 ? 'PASS' : v === 0 ? 'FAIL' : '' }, grid: { color: 'rgba(45,53,85,0.3)' } }, x: { grid: { display: false } } },
+    plugins: { legend: { display: false } }
+  }
+});
+
+// ---- ACCORDION ----
+function toggleAcc(header) {
+  const body = header.nextElementSibling;
+  body.classList.toggle('open');
+  const arrow = header.querySelector('span:last-child');
+  arrow.textContent = body.classList.contains('open') ? '▲' : '▼';
+  arrow.style.transform = body.classList.contains('open') ? 'rotate(180deg)' : '';
+}
+
+// ---- SCREENSHOT MODAL ----
+function openScreenshot(src) {
+  document.getElementById('screenshotModalImg').src = src;
+  document.getElementById('screenshotModal').classList.add('open');
+}
+function closeScreenshot() {
+  document.getElementById('screenshotModal').classList.remove('open');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeScreenshot(); });
+</script>
+</body>
+</html>
