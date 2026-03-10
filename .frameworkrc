@@ -1,0 +1,70 @@
+# ╔═══════════════════════════════════════════════════════════════════════════╗
+# ║       .frameworkrc — FEATURE TOGGLE CONFIGURATION                        ║
+# ╠═══════════════════════════════════════════════════════════════════════════╣
+# ║                                                                          ║
+# ║   This file controls which framework features are ACTIVE.                ║
+# ║   Set a feature to "true" to enable it, "false" to disable it.          ║
+# ║                                                                          ║
+# ║   The framework reads this file at startup. You don't need to touch     ║
+# ║   any code — just flip the toggles below.                               ║
+# ║                                                                          ║
+# ║   NOTE: Some features also need credentials in .env to work.            ║
+# ║   For example, XRAY needs JIRA_BASE_URL + JIRA_API_TOKEN in .env.      ║
+# ║                                                                          ║
+# ╚═══════════════════════════════════════════════════════════════════════════╝
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  CORE FEATURES (always available)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Data-driven testing — read test data from YAML files
+# If false, tests must hard-code their own data
+DATA_DRIVEN=true
+
+# Password encryption — auto-decrypt ${ENC:...} values in YAML
+# If false, ${ENC:...} values are passed as-is (raw encrypted text)
+ENCRYPTION=true
+
+# HTML execution report — auto-generate after each run
+# If false, only Playwright's built-in report is generated
+HTML_REPORT=true
+
+# Enhanced logging — structured log output to file + console
+# If false, only console.log output is available
+ENHANCED_LOGGING=true
+
+# Accessibility scanning — axe-core auto-scan after UI tests
+# If false, no a11y scans are run (faster tests)
+ACCESSIBILITY_SCAN=true
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  INTEGRATION FEATURES (need credentials in .env)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# JIRA XRAY — auto-upload PASS/FAIL results to XRAY
+# Requires: JIRA_BASE_URL, JIRA_USERNAME, JIRA_API_TOKEN in .env
+XRAY_INTEGRATION=true
+
+# Database — test data seeding and cleanup
+# Requires: DB_ENABLED=true + DB_HOST/PORT/NAME/USER/PASSWORD in .env
+DATABASE=false
+
+# Email verification — wait for OTP/confirmation emails
+# Requires: EMAIL_ENABLED=true + EMAIL_SERVICE/API_KEY in .env
+EMAIL_VERIFICATION=false
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  TEST EXECUTION DEFAULTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Run headless by default? (override with npm run test:headed)
+RUN_HEADLESS=true
+
+# Run in parallel by default? (override with npm run test:single)
+RUN_PARALLEL=false
+
+# Number of parallel workers (only used if RUN_PARALLEL=true)
+RUN_WORKERS=2
+
+# Retries on failure (0 = no retries)
+RUN_RETRIES=0

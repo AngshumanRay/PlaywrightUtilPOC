@@ -1,9 +1,10 @@
 {
   "name": "playwright-autoagent",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Playwright AutoAgent — AI-powered test automation framework with JIRA XRAY, data-driven YAML, encryption, iframe handling, and HTML reports",
+  "main": "utils/index.ts",
   "scripts": {
+    "init": "npx ts-node scripts/init-project.ts",
     "test": "npx playwright test",
     "test:login": "npx playwright test tests/login.test.ts",
     "test:api": "npx playwright test tests/api.test.ts",
@@ -27,11 +28,27 @@
     "run:headless": "RUN_HEADLESS=true npx playwright test && open reports/$(ls -t reports/ | head -1)",
     "run:headed": "RUN_HEADLESS=false npx playwright test && open reports/$(ls -t reports/ | head -1)",
     "encrypt-password": "npx ts-node utils/security/crypto-helper.ts",
-    "lint": "npx tsc --noEmit"
+    "lint": "npx tsc --noEmit",
+    "clean": "rm -rf test-results playwright-report reports/execution-report-*.html logs/*.log dist"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "playwright",
+    "automation",
+    "testing",
+    "jira",
+    "xray",
+    "data-driven",
+    "yaml",
+    "iframe",
+    "encryption",
+    "page-object"
+  ],
+  "author": "AngshumanRay",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AngshumanRay/PlaywrightUtilPOC.git"
+  },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@types/node": "^25.3.5",
