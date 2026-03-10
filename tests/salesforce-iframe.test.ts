@@ -49,7 +49,7 @@ import path from 'path';
 import { test, expect } from '../utils/framework/xray-test-fixture';
 import { BasePage } from '../pages/BasePage';
 import { enhancedLogger } from '../utils/helpers/enhanced-logger';
-import { getTestData, isTestEnabled } from '../utils/helpers/test-data-loader';
+import { getTestData, getTestDataSets, isTestEnabled } from '../utils/helpers/test-data-loader';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TEST DATA FILE
@@ -87,100 +87,69 @@ test.describe('Salesforce-Style Iframe Tests', () => {
   //
   //  XRAY MAPPING: PROJ-112
   // ===========================================================================
+  // ── Data-driven: load all data sets for PROJ-112 ──
+  const proj112Enabled = isTestEnabled(DATA_FILE, 'PROJ-112');
+  const proj112Sets    = getTestDataSets(DATA_FILE, 'PROJ-112');
+
+  for (const ds of proj112Sets) {
   test(
-    'TC12: Iframe — fill multiple form fields inside a single iframe',
+    `TC12: Iframe — fill multiple form fields inside a single iframe [${ds.label}]`,
     {
       annotation: { type: 'xray', description: 'PROJ-112' },
     },
     async ({ page, xrayTestKey }) => {
+      if (!proj112Enabled) test.skip();
 
-      // ── Load test data ──
-      const td = getTestData(DATA_FILE, 'PROJ-112');
-      if (!isTestEnabled(DATA_FILE, 'PROJ-112')) test.skip();
+      enhancedLogger.section(`▶ Running Test: TC12 [${ds.label}] | XRAY: ${xrayTestKey}`);
+      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey} [${ds.label}]`, xrayTestKey);
 
-      enhancedLogger.section(`▶ Running Test: ${td.testCase} | XRAY: ${xrayTestKey}`);
-      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey}`, xrayTestKey);
-
-      // ── Create a BasePage — all iframe helpers live here ──
       const basePage = new BasePage(page);
 
-      // ─────────────────────────────────────────────────────────────────────
-      // STEP 1: Navigate to the local iframe fixture page
-      // ─────────────────────────────────────────────────────────────────────
+      // Step 1: Navigate to the local iframe fixture page
       enhancedLogger.step('Step 1: Navigate to the iframe fixture page', xrayTestKey);
       await page.goto(FIXTURE_URL, { waitUntil: 'domcontentloaded' });
       enhancedLogger.info('✅ Page loaded', xrayTestKey);
 
-      // ─────────────────────────────────────────────────────────────────────
-      // STEP 2: Verify main-page heading (OUTSIDE any iframe)
-      //   → Normal page.locator() works — no iframe switching needed.
-      // ─────────────────────────────────────────────────────────────────────
+      // Step 2: Verify main-page heading (OUTSIDE any iframe)
       enhancedLogger.step('Step 2: Verify main-page heading (outside iframe)', xrayTestKey);
-      await expect(page.locator('#page-title')).toHaveText(td.pageTitle as string);
+      await expect(page.locator('#page-title')).toHaveText(ds.pageTitle as string);
       enhancedLogger.info('✅ Main-page heading verified', xrayTestKey);
 
-      // ─────────────────────────────────────────────────────────────────────
-      // STEP 3: Get the Lead-Info iframe handle — ONE TIME, reuse everywhere
-      //
-      //   ★ THIS IS THE KEY GENERIC PATTERN:
-      //     const frame = basePage.getIframe('<css-selector>');
-      //     Now every subsequent call just passes `frame` — no switching.
-      // ─────────────────────────────────────────────────────────────────────
+      // Step 3: Get the Lead-Info iframe handle
       enhancedLogger.step('Step 3: Get iframe handle for Lead Information', xrayTestKey);
-      const leadFrame = basePage.getIframe(td.leadIframeSelector as string);
+      const leadFrame = basePage.getIframe(ds.leadIframeSelector as string);
 
-      // ─────────────────────────────────────────────────────────────────────
-      // STEP 4: Verify that the First Name field is visible inside iframe
-      // ─────────────────────────────────────────────────────────────────────
+      // Step 4: Verify that the First Name field is visible inside iframe
       enhancedLogger.step('Step 4: Verify First Name field visible inside iframe', xrayTestKey);
       await basePage.assertVisibleInIframe(leadFrame, '#firstName', 'First Name field');
       enhancedLogger.info('✅ First Name field is visible inside iframe', xrayTestKey);
 
-      // ─────────────────────────────────────────────────────────────────────
-      // STEP 5: Fill ALL form fields inside the Lead iframe
-      //
-      //   ★ GENERIC PATTERN — just call fillInIframe() for each field.
-      //     No "switchToFrame" / "switchToDefault" gymnastics needed.
-      //     Every call targets the same `leadFrame` handle.
-      // ─────────────────────────────────────────────────────────────────────
+      // Step 5: Fill ALL form fields inside the Lead iframe
       enhancedLogger.step('Step 5: Fill all lead form fields inside iframe', xrayTestKey);
-
-      await basePage.fillInIframe(leadFrame, '#firstName',   td.firstName   as string, 'First Name');
-      await basePage.fillInIframe(leadFrame, '#lastName',    td.lastName    as string, 'Last Name');
-      await basePage.fillInIframe(leadFrame, '#company',     td.company     as string, 'Company');
-      await basePage.fillInIframe(leadFrame, '#email',       td.email       as string, 'Email');
-      await basePage.fillInIframe(leadFrame, '#phone',       td.phone       as string, 'Phone');
-      await basePage.fillInIframe(leadFrame, '#description', td.description as string, 'Description');
-
-      // ── Select a dropdown value inside the iframe ──
-      await basePage.selectInIframe(leadFrame, '#leadStatus', td.leadStatus as string, 'Lead Status');
-
+      await basePage.fillInIframe(leadFrame, '#firstName',   ds.firstName   as string, 'First Name');
+      await basePage.fillInIframe(leadFrame, '#lastName',    ds.lastName    as string, 'Last Name');
+      await basePage.fillInIframe(leadFrame, '#company',     ds.company     as string, 'Company');
+      await basePage.fillInIframe(leadFrame, '#email',       ds.email       as string, 'Email');
+      await basePage.fillInIframe(leadFrame, '#phone',       ds.phone       as string, 'Phone');
+      await basePage.fillInIframe(leadFrame, '#description', ds.description as string, 'Description');
+      await basePage.selectInIframe(leadFrame, '#leadStatus', ds.leadStatus as string, 'Lead Status');
       enhancedLogger.info('✅ All 7 lead fields filled inside iframe', xrayTestKey);
 
-      // ─────────────────────────────────────────────────────────────────────
-      // STEP 6: Verify field values by reading them back
-      //
-      //   ★ getIframeFieldValue() reads an <input>'s value inside an iframe.
-      // ─────────────────────────────────────────────────────────────────────
+      // Step 6: Verify field values by reading them back
       enhancedLogger.step('Step 6: Read back and verify field values', xrayTestKey);
-
       const actualFirst = await basePage.getIframeFieldValue(leadFrame, '#firstName');
       const actualLast  = await basePage.getIframeFieldValue(leadFrame, '#lastName');
       const actualComp  = await basePage.getIframeFieldValue(leadFrame, '#company');
       const actualEmail = await basePage.getIframeFieldValue(leadFrame, '#email');
       const actualPhone = await basePage.getIframeFieldValue(leadFrame, '#phone');
-
-      expect(actualFirst).toBe(td.firstName);
-      expect(actualLast).toBe(td.lastName);
-      expect(actualComp).toBe(td.company);
-      expect(actualEmail).toBe(td.email);
-      expect(actualPhone).toBe(td.phone);
-
+      expect(actualFirst).toBe(ds.firstName);
+      expect(actualLast).toBe(ds.lastName);
+      expect(actualComp).toBe(ds.company);
+      expect(actualEmail).toBe(ds.email);
+      expect(actualPhone).toBe(ds.phone);
       enhancedLogger.info(`✅ Verified — First: ${actualFirst}, Last: ${actualLast}, Company: ${actualComp}`, xrayTestKey);
 
-      // ─────────────────────────────────────────────────────────────────────
-      // STEP 7: Back to main page — just use page.locator() (no switch)
-      // ─────────────────────────────────────────────────────────────────────
+      // Step 7: Back to main page
       enhancedLogger.step('Step 7: Verify main-page heading still accessible (no switch needed)', xrayTestKey);
       await expect(page.locator('#page-title')).toBeVisible();
       enhancedLogger.info('✅ Main-page still accessible — no iframe switch-back needed', xrayTestKey);
@@ -188,6 +157,7 @@ test.describe('Salesforce-Style Iframe Tests', () => {
       enhancedLogger.pass('TC12 passed — filled & verified 7 fields inside a single iframe', xrayTestKey);
     }
   );
+  } // end for ds of proj112Sets
 
 
   // ===========================================================================
@@ -211,96 +181,77 @@ test.describe('Salesforce-Style Iframe Tests', () => {
   //
   //  XRAY MAPPING: PROJ-113
   // ===========================================================================
+  // ── Data-driven: load all data sets for PROJ-113 ──
+  const proj113Enabled = isTestEnabled(DATA_FILE, 'PROJ-113');
+  const proj113Sets    = getTestDataSets(DATA_FILE, 'PROJ-113');
+
+  for (const ds of proj113Sets) {
   test(
-    'TC13: Iframe — fill fields across TWO iframes and verify',
+    `TC13: Iframe — fill fields across TWO iframes and verify [${ds.label}]`,
     {
       annotation: { type: 'xray', description: 'PROJ-113' },
     },
     async ({ page, xrayTestKey }) => {
+      if (!proj113Enabled) test.skip();
 
-      // ── Load test data ──
-      const td = getTestData(DATA_FILE, 'PROJ-113');
-      if (!isTestEnabled(DATA_FILE, 'PROJ-113')) test.skip();
-
-      enhancedLogger.section(`▶ Running Test: ${td.testCase} | XRAY: ${xrayTestKey}`);
-      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey}`, xrayTestKey);
+      enhancedLogger.section(`▶ Running Test: TC13 [${ds.label}] | XRAY: ${xrayTestKey}`);
+      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey} [${ds.label}]`, xrayTestKey);
 
       const basePage = new BasePage(page);
 
-      // ─────────────────────────────────────────────────────────────────────
-      // STEP 1: Navigate
-      // ─────────────────────────────────────────────────────────────────────
+      // Step 1: Navigate
       enhancedLogger.step('Step 1: Navigate to the iframe fixture page', xrayTestKey);
       await page.goto(FIXTURE_URL, { waitUntil: 'domcontentloaded' });
 
-      // ─────────────────────────────────────────────────────────────────────
-      // STEP 2: Get BOTH iframe handles up front
-      //   ★ You can hold multiple frame handles at the same time.
-      //     Jump between them freely — no "switch to default" needed.
-      // ─────────────────────────────────────────────────────────────────────
+      // Step 2: Get BOTH iframe handles
       enhancedLogger.step('Step 2: Get frame handles for BOTH iframes', xrayTestKey);
-      const leadFrame    = basePage.getIframe(td.leadIframeSelector    as string);
-      const contactFrame = basePage.getIframe(td.contactIframeSelector as string);
+      const leadFrame    = basePage.getIframe(ds.leadIframeSelector    as string);
+      const contactFrame = basePage.getIframe(ds.contactIframeSelector as string);
       enhancedLogger.info('✅ Got handles for Lead iframe + Contact iframe', xrayTestKey);
 
-      // ─────────────────────────────────────────────────────────────────────
-      // STEP 3: Fill fields in IFRAME #1 (Lead Information)
-      // ─────────────────────────────────────────────────────────────────────
+      // Step 3: Fill fields in IFRAME #1 (Lead Information)
       enhancedLogger.step('Step 3: Fill lead fields in iframe #1', xrayTestKey);
-      await basePage.fillInIframe(leadFrame, '#firstName', td.firstName as string, 'First Name');
-      await basePage.fillInIframe(leadFrame, '#lastName',  td.lastName  as string, 'Last Name');
-      await basePage.fillInIframe(leadFrame, '#company',   td.company   as string, 'Company');
+      await basePage.fillInIframe(leadFrame, '#firstName', ds.firstName as string, 'First Name');
+      await basePage.fillInIframe(leadFrame, '#lastName',  ds.lastName  as string, 'Last Name');
+      await basePage.fillInIframe(leadFrame, '#company',   ds.company   as string, 'Company');
       enhancedLogger.info('✅ Lead fields filled in iframe #1', xrayTestKey);
 
-      // ─────────────────────────────────────────────────────────────────────
-      // STEP 4: Jump to IFRAME #2 (Contact Details) — just use contactFrame
-      //   ★ No "switchToDefaultContent" needed — just use the other handle.
-      // ─────────────────────────────────────────────────────────────────────
+      // Step 4: Jump to IFRAME #2 (Contact Details)
       enhancedLogger.step('Step 4: Fill contact fields in iframe #2', xrayTestKey);
-      await basePage.fillInIframe(contactFrame, '#street',  td.street  as string, 'Street');
-      await basePage.fillInIframe(contactFrame, '#city',    td.city    as string, 'City');
-      await basePage.fillInIframe(contactFrame, '#state',   td.state   as string, 'State');
-      await basePage.fillInIframe(contactFrame, '#zip',     td.zip     as string, 'Zip Code');
-      await basePage.fillInIframe(contactFrame, '#website', td.website as string, 'Website');
-
-      // ── Select Country dropdown inside iframe #2 ──
-      await basePage.selectInIframe(contactFrame, '#country', td.country as string, 'Country');
+      await basePage.fillInIframe(contactFrame, '#street',  ds.street  as string, 'Street');
+      await basePage.fillInIframe(contactFrame, '#city',    ds.city    as string, 'City');
+      await basePage.fillInIframe(contactFrame, '#state',   ds.state   as string, 'State');
+      await basePage.fillInIframe(contactFrame, '#zip',     ds.zip     as string, 'Zip Code');
+      await basePage.fillInIframe(contactFrame, '#website', ds.website as string, 'Website');
+      await basePage.selectInIframe(contactFrame, '#country', ds.country as string, 'Country');
       enhancedLogger.info('✅ Contact fields filled in iframe #2', xrayTestKey);
 
-      // ─────────────────────────────────────────────────────────────────────
-      // STEP 5: Click "Save" button INSIDE iframe #2
-      // ─────────────────────────────────────────────────────────────────────
+      // Step 5: Click "Save" button INSIDE iframe #2
       enhancedLogger.step('Step 5: Click Save button inside iframe #2', xrayTestKey);
       await basePage.clickInIframe(contactFrame, '#save-btn', 'Save Contact button');
       enhancedLogger.info('✅ Save button clicked inside iframe #2', xrayTestKey);
 
-      // ─────────────────────────────────────────────────────────────────────
-      // STEP 6: Verify success message INSIDE iframe #2
-      // ─────────────────────────────────────────────────────────────────────
+      // Step 6: Verify success message INSIDE iframe #2
       enhancedLogger.step('Step 6: Verify success message in iframe #2', xrayTestKey);
       await basePage.assertTextInIframe(contactFrame, '#save-msg', 'Contact saved successfully', 'Save confirmation');
       enhancedLogger.info('✅ Success message verified inside iframe #2', xrayTestKey);
 
-      // ─────────────────────────────────────────────────────────────────────
-      // STEP 7: Jump BACK to iframe #1 — verify the fields we filled earlier
-      //   ★ No "switch" needed — just reuse the leadFrame handle.
-      // ─────────────────────────────────────────────────────────────────────
+      // Step 7: Jump BACK to iframe #1 — verify fields still populated
       enhancedLogger.step('Step 7: Verify lead fields still populated in iframe #1', xrayTestKey);
       const actualFirst = await basePage.getIframeFieldValue(leadFrame, '#firstName');
       const actualComp  = await basePage.getIframeFieldValue(leadFrame, '#company');
-      expect(actualFirst).toBe(td.firstName);
-      expect(actualComp).toBe(td.company);
+      expect(actualFirst).toBe(ds.firstName);
+      expect(actualComp).toBe(ds.company);
       enhancedLogger.info(`✅ Iframe #1 fields still correct — First: ${actualFirst}, Company: ${actualComp}`, xrayTestKey);
 
-      // ─────────────────────────────────────────────────────────────────────
-      // STEP 8: Verify main-page heading (outside all iframes)
-      // ─────────────────────────────────────────────────────────────────────
+      // Step 8: Verify main-page heading (outside all iframes)
       enhancedLogger.step('Step 8: Verify main-page heading (outside iframes)', xrayTestKey);
-      await expect(page.locator('#page-title')).toHaveText(td.pageTitle as string);
+      await expect(page.locator('#page-title')).toHaveText(ds.pageTitle as string);
       enhancedLogger.info('✅ Main-page heading verified — seamless multi-iframe test done', xrayTestKey);
 
       enhancedLogger.pass('TC13 passed — filled & verified fields across TWO iframes + main page', xrayTestKey);
     }
   );
+  } // end for ds of proj113Sets
 
 });

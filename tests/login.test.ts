@@ -153,39 +153,41 @@ test.describe('Login Feature Tests', () => {
   //
   // EXPECTED OUTCOME: PASS (the test verifies the ERROR was shown correctly)
   // ============================================================================
-  test(
-    'TC02: Wrong password should show an error message',
-    {
-      annotation: { type: 'xray', description: 'PROJ-102' },
-    },
-    async ({ page, xrayTestKey }) => {
+  const proj102Enabled = isTestEnabled(DATA_FILE, 'PROJ-102');
+  const proj102Data    = getTestData(DATA_FILE, 'PROJ-102');
+  const proj102Sets    = getTestDataSets(DATA_FILE, 'PROJ-102');
 
-      // ── Load test data from YAML (data-driven) ──
-      const td = getTestData(DATA_FILE, 'PROJ-102');
+  for (const ds of proj102Sets) {
+    test(
+      `TC02: Wrong password should show an error message [${ds.label}]`,
+      {
+        annotation: { type: 'xray', description: 'PROJ-102' },
+      },
+      async ({ page, xrayTestKey }) => {
 
-      // ── Skip if run: no in YAML ──
-      if (!isTestEnabled(DATA_FILE, 'PROJ-102')) test.skip();
+        if (!proj102Enabled) test.skip();
 
-      enhancedLogger.section(`▶ Running Test: ${td.testCase} | XRAY: ${xrayTestKey}`);
-      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey}`, xrayTestKey);
+        enhancedLogger.section(`▶ Running Test: ${proj102Data.testCase} [${ds.label}] | XRAY: ${xrayTestKey}`);
+        enhancedLogger.info(`📂 Data set ${ds.index + 1}/${proj102Sets.length}: "${ds.label}"`, xrayTestKey);
 
-      const loginPage = new LoginPage(page);
+        const loginPage = new LoginPage(page);
 
-      enhancedLogger.step('Step 1: Navigate to the login page', xrayTestKey);
-      await loginPage.navigateToLoginPage();
+        enhancedLogger.step('Step 1: Navigate to the login page', xrayTestKey);
+        await loginPage.navigateToLoginPage();
 
-      enhancedLogger.step('Step 2: Enter valid username but wrong password', xrayTestKey);
-      await loginPage.login(td.username as string, td.password as string);
+        enhancedLogger.step(`Step 2: Enter credentials for "${ds.label}" and submit`, xrayTestKey);
+        await loginPage.login(ds.username as string, ds.password as string);
 
-      enhancedLogger.step('Step 3: Verify error message is displayed', xrayTestKey);
-      await loginPage.verifyLoginErrorMessage(td.expectedErrorMessage as string);
+        enhancedLogger.step('Step 3: Verify error message is displayed', xrayTestKey);
+        await loginPage.verifyLoginErrorMessage(ds.expectedErrorMessage as string);
 
-      enhancedLogger.step('Step 4: Verify user is still on the login page', xrayTestKey);
-      expect(loginPage.getCurrentUrl()).toContain(td.expectedUrlFragment as string);
+        enhancedLogger.step('Step 4: Verify user is still on the login page', xrayTestKey);
+        expect(loginPage.getCurrentUrl()).toContain(ds.expectedUrlFragment as string);
 
-      enhancedLogger.pass(`TC02 passed — Error message shown for wrong password`, xrayTestKey);
-    }
-  );
+        enhancedLogger.pass(`TC02 passed [${ds.label}] — Error message shown for wrong password`, xrayTestKey);
+      }
+    );
+  }
 
   // ============================================================================
   // TEST 3: Login Should Fail with Empty Fields
@@ -203,40 +205,42 @@ test.describe('Login Feature Tests', () => {
   //
   // EXPECTED OUTCOME: PASS (validation errors are shown)
   // ============================================================================
-  test(
-    'TC03: Empty credentials should show validation errors',
-    {
-      annotation: { type: 'xray', description: 'PROJ-103' },
-    },
-    async ({ page, xrayTestKey }) => {
+  const proj103Enabled = isTestEnabled(DATA_FILE, 'PROJ-103');
+  const proj103Data    = getTestData(DATA_FILE, 'PROJ-103');
+  const proj103Sets    = getTestDataSets(DATA_FILE, 'PROJ-103');
 
-      // ── Load test data from YAML (data-driven) ──
-      const td = getTestData(DATA_FILE, 'PROJ-103');
+  for (const ds of proj103Sets) {
+    test(
+      `TC03: Empty credentials should show validation errors [${ds.label}]`,
+      {
+        annotation: { type: 'xray', description: 'PROJ-103' },
+      },
+      async ({ page, xrayTestKey }) => {
 
-      // ── Skip if run: no in YAML ──
-      if (!isTestEnabled(DATA_FILE, 'PROJ-103')) test.skip();
+        if (!proj103Enabled) test.skip();
 
-      enhancedLogger.section(`▶ Running Test: ${td.testCase} | XRAY: ${xrayTestKey}`);
-      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey}`, xrayTestKey);
+        enhancedLogger.section(`▶ Running Test: ${proj103Data.testCase} [${ds.label}] | XRAY: ${xrayTestKey}`);
+        enhancedLogger.info(`📂 Data set ${ds.index + 1}/${proj103Sets.length}: "${ds.label}"`, xrayTestKey);
 
-      const loginPage = new LoginPage(page);
+        const loginPage = new LoginPage(page);
 
-      enhancedLogger.step('Step 1: Navigate to the login page', xrayTestKey);
-      await loginPage.navigateToLoginPage();
+        enhancedLogger.step('Step 1: Navigate to the login page', xrayTestKey);
+        await loginPage.navigateToLoginPage();
 
-      enhancedLogger.step('Step 2: Click login button without entering credentials', xrayTestKey);
-      await loginPage.clickLoginButton();
+        enhancedLogger.step('Step 2: Click login button without entering credentials', xrayTestKey);
+        await loginPage.clickLoginButton();
 
-      enhancedLogger.step('Step 3: Verify validation flash message is shown', xrayTestKey);
-      await loginPage.verifyLoginErrorMessage(td.expectedErrorMessage as string);
+        enhancedLogger.step('Step 3: Verify validation flash message is shown', xrayTestKey);
+        await loginPage.verifyLoginErrorMessage(ds.expectedErrorMessage as string);
 
-      const currentUrl = loginPage.getCurrentUrl();
-      expect(currentUrl).toContain(td.expectedUrlFragment as string);
+        const currentUrl = loginPage.getCurrentUrl();
+        expect(currentUrl).toContain(ds.expectedUrlFragment as string);
 
-      enhancedLogger.info(`Validation confirmed: empty credentials rejected, URL is still: ${currentUrl}`, xrayTestKey);
+        enhancedLogger.info(`Validation confirmed: empty credentials rejected, URL is still: ${currentUrl}`, xrayTestKey);
 
-      enhancedLogger.pass(`TC03 passed — Empty credentials correctly rejected`, xrayTestKey);
-    }
-  );
+        enhancedLogger.pass(`TC03 passed [${ds.label}] — Empty credentials correctly rejected`, xrayTestKey);
+      }
+    );
+  }
 
 });

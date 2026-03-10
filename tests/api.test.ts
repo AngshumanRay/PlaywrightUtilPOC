@@ -49,7 +49,7 @@ import { apiGet, apiPost } from '../utils/api/api-helper';
 import { enhancedLogger } from '../utils/helpers/enhanced-logger';
 
 // Import the data-driven test data loader (reads from YAML files)
-import { getTestData, isTestEnabled } from '../utils/helpers/test-data-loader';
+import { getTestData, getTestDataSets, isTestEnabled } from '../utils/helpers/test-data-loader';
 
 // =============================================================================
 // TEST DATA — DATA-DRIVEN (loaded from test-data/api-tests.yaml)
@@ -86,26 +86,28 @@ test.describe('API Feature Tests', () => {
   //
   // XRAY MAPPING: PROJ-104
   // ==========================================================================
+  // ── Data-driven: load all data sets for PROJ-104 ──
+  const proj104Enabled = isTestEnabled(DATA_FILE, 'PROJ-104');
+  const proj104Sets    = getTestDataSets(DATA_FILE, 'PROJ-104');
+
+  for (const ds of proj104Sets) {
   test(
-    'TC04: GET /posts/1 — Should return a valid blog post with correct fields',
+    `TC04: GET /posts/1 — Should return a valid blog post with correct fields [${ds.label}]`,
     {
       annotation: { type: 'xray', description: 'PROJ-104' },
     },
     async ({ xrayTestKey }) => {
-      // ── Load test data from YAML (data-driven) ──
-      const td = getTestData(DATA_FILE, 'PROJ-104');
-
       // ── Skip if run: no in YAML ──
-      if (!isTestEnabled(DATA_FILE, 'PROJ-104')) test.skip();
+      if (!proj104Enabled) test.skip();
 
-      const baseUrl = td.baseUrl as string;
-      const endpoint = td.endpoint as string;
-      const expectedStatus = td.expectedStatus as number;
-      const expectedFields = td.expectedFields as string[];
-      const expectedId = td.expectedId as number;
+      const baseUrl = ds.baseUrl as string;
+      const endpoint = ds.endpoint as string;
+      const expectedStatus = ds.expectedStatus as number;
+      const expectedFields = ds.expectedFields as string[];
+      const expectedId = ds.expectedId as number;
 
-      enhancedLogger.section(`▶ Running Test: ${td.testCase} | XRAY: ${xrayTestKey}`);
-      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey}`, xrayTestKey);
+      enhancedLogger.section(`▶ Running Test: TC04 [${ds.label}] | XRAY: ${xrayTestKey}`);
+      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey} [${ds.label}]`, xrayTestKey);
 
       // -----------------------------------------------------------------------
       // STEP 1: Send GET request to fetch post #1
@@ -152,6 +154,7 @@ test.describe('API Feature Tests', () => {
       enhancedLogger.pass(`TC04 passed — GET ${endpoint} returned valid post (${response.durationMs}ms)`, xrayTestKey);
     }
   );
+  } // end for ds of proj104Sets
 
   // ==========================================================================
   // TEST 5: POST to create a new resource and verify 201 Created
@@ -174,29 +177,31 @@ test.describe('API Feature Tests', () => {
   //
   // XRAY MAPPING: PROJ-105
   // ==========================================================================
+  // ── Data-driven: load all data sets for PROJ-105 ──
+  const proj105Enabled = isTestEnabled(DATA_FILE, 'PROJ-105');
+  const proj105Sets    = getTestDataSets(DATA_FILE, 'PROJ-105');
+
+  for (const ds of proj105Sets) {
   test(
-    'TC05: POST /posts — Should create a new post and return 201 Created',
+    `TC05: POST /posts — Should create a new post and return 201 Created [${ds.label}]`,
     {
       annotation: { type: 'xray', description: 'PROJ-105' },
     },
     async ({ xrayTestKey }) => {
-      // ── Load test data from YAML (data-driven) ──
-      const td = getTestData(DATA_FILE, 'PROJ-105');
-
       // ── Skip if run: no in YAML ──
-      if (!isTestEnabled(DATA_FILE, 'PROJ-105')) test.skip();
+      if (!proj105Enabled) test.skip();
 
-      const baseUrl = td.baseUrl as string;
-      const endpoint = td.endpoint as string;
-      const expectedStatus = td.expectedStatus as number;
+      const baseUrl = ds.baseUrl as string;
+      const endpoint = ds.endpoint as string;
+      const expectedStatus = ds.expectedStatus as number;
       const payload = {
-        title:  td.payloadTitle as string,
-        body:   td.payloadBody as string,
-        userId: td.payloadUserId as number,
+        title:  ds.payloadTitle as string,
+        body:   ds.payloadBody as string,
+        userId: ds.payloadUserId as number,
       };
 
-      enhancedLogger.section(`▶ Running Test: ${td.testCase} | XRAY: ${xrayTestKey}`);
-      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey}`, xrayTestKey);
+      enhancedLogger.section(`▶ Running Test: TC05 [${ds.label}] | XRAY: ${xrayTestKey}`);
+      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey} [${ds.label}]`, xrayTestKey);
 
       // -----------------------------------------------------------------------
       // STEP 1: Prepare the request payload (from YAML)
@@ -244,6 +249,7 @@ test.describe('API Feature Tests', () => {
       enhancedLogger.pass(`TC05 passed — POST ${endpoint} returned ${expectedStatus} Created with id=${response.data!.id} (${response.durationMs}ms)`, xrayTestKey);
     }
   );
+  } // end for ds of proj105Sets
 
   // ==========================================================================
   // TEST 6: GET user profile and validate all key fields
@@ -262,29 +268,31 @@ test.describe('API Feature Tests', () => {
   //
   // XRAY MAPPING: PROJ-106
   // ==========================================================================
+  // ── Data-driven: load all data sets for PROJ-106 ──
+  const proj106Enabled = isTestEnabled(DATA_FILE, 'PROJ-106');
+  const proj106Sets    = getTestDataSets(DATA_FILE, 'PROJ-106');
+
+  for (const ds of proj106Sets) {
   test(
-    'TC06: GET /users/1 — Should return a complete user profile with nested fields',
+    `TC06: GET /users/1 — Should return a complete user profile with nested fields [${ds.label}]`,
     {
       annotation: { type: 'xray', description: 'PROJ-106' },
     },
     async ({ xrayTestKey }) => {
-      // ── Load test data from YAML (data-driven) ──
-      const td = getTestData(DATA_FILE, 'PROJ-106');
-
       // ── Skip if run: no in YAML ──
-      if (!isTestEnabled(DATA_FILE, 'PROJ-106')) test.skip();
+      if (!proj106Enabled) test.skip();
 
-      const baseUrl = td.baseUrl as string;
-      const endpoint = td.endpoint as string;
-      const expectedStatus = td.expectedStatus as number;
-      const expectedFields = td.expectedFields as string[];
-      const expectedId = td.expectedId as number;
-      const emailContains = td.emailContains as string;
-      const addressFields = td.addressFields as string[];
-      const companyFields = td.companyFields as string[];
+      const baseUrl = ds.baseUrl as string;
+      const endpoint = ds.endpoint as string;
+      const expectedStatus = ds.expectedStatus as number;
+      const expectedFields = ds.expectedFields as string[];
+      const expectedId = ds.expectedId as number;
+      const emailContains = ds.emailContains as string;
+      const addressFields = ds.addressFields as string[];
+      const companyFields = ds.companyFields as string[];
 
-      enhancedLogger.section(`▶ Running Test: ${td.testCase} | XRAY: ${xrayTestKey}`);
-      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey}`, xrayTestKey);
+      enhancedLogger.section(`▶ Running Test: TC06 [${ds.label}] | XRAY: ${xrayTestKey}`);
+      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey} [${ds.label}]`, xrayTestKey);
 
       // -----------------------------------------------------------------------
       // STEP 1: Send GET request to fetch user #1
@@ -349,5 +357,6 @@ test.describe('API Feature Tests', () => {
       enhancedLogger.pass(`TC06 passed — GET ${endpoint} returned full user profile (${response.durationMs}ms)`, xrayTestKey);
     }
   );
+  } // end for ds of proj106Sets
 
 });

@@ -117,7 +117,7 @@ import { enhancedLogger } from '../utils/helpers/enhanced-logger';
 // Each test reads its data using getTestData('ui-tests.yaml', 'PROJ-XXX').
 // To skip a test, set  run: no  next to the PROJ-XXX key in the YAML file.
 // ─────────────────────────────────────────────────────────────────────────────
-import { getTestData, isTestEnabled } from '../utils/helpers/test-data-loader';
+import { getTestData, getTestDataSets, isTestEnabled } from '../utils/helpers/test-data-loader';
 
 // =============================================================================
 // TEST DATA FILE — DATA-DRIVEN (loaded from test-data/ui-tests.yaml)
@@ -156,48 +156,40 @@ test.describe('Playwright.dev Navigation Tests', () => {
   //  └──────────────────────────────────────────────────────────────────────┘
   //
   // ============================================================================
+  // ── Data-driven: load all data sets for PROJ-107 ──
+  const proj107Enabled = isTestEnabled(DATA_FILE, 'PROJ-107');
+  const proj107Sets    = getTestDataSets(DATA_FILE, 'PROJ-107');
+
+  for (const ds of proj107Sets) {
   test(
-    'TC07: Navigate to Homepage and verify Playwright title',
+    `TC07: Navigate to Homepage and verify Playwright title [${ds.label}]`,
     {
-      // ──── XRAY LINK ────
-      // This annotation connects this test to JIRA XRAY test case PROJ-107.
-      // After the test runs, the result (PASS or FAIL) is automatically
-      // uploaded to PROJ-107 in JIRA.
-      // Change 'PROJ-107' to your actual test case key.
       annotation: { type: 'xray', description: 'PROJ-107' },
     },
     async ({ page, xrayTestKey }) => {
+      if (!proj107Enabled) test.skip();
 
-      // ── Load test data from YAML (data-driven) ──
-      const td = getTestData(DATA_FILE, 'PROJ-107');
-
-      // ── Skip if run: no in YAML ──
-      if (!isTestEnabled(DATA_FILE, 'PROJ-107')) test.skip();
-
-      enhancedLogger.section(`▶ Running Test: ${td.testCase} | XRAY: ${xrayTestKey}`);
-      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey}`, xrayTestKey);
+      enhancedLogger.section(`▶ Running Test: TC07 [${ds.label}] | XRAY: ${xrayTestKey}`);
+      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey} [${ds.label}]`, xrayTestKey);
 
       const devPage = new PlaywrightDevPage(page);
 
-      // ── Step 1: Open the homepage ──
       enhancedLogger.step('Step 1: Navigate to the Playwright.dev homepage', xrayTestKey);
       await devPage.navigateToHomePage();
 
-      // ── Step 2: Verify the page title (from YAML) ──
-      enhancedLogger.step(`Step 2: Verify page title contains "${td.expectedTitle}"`, xrayTestKey);
-      await devPage.verifyPageTitle(td.expectedTitle as string);
+      enhancedLogger.step(`Step 2: Verify page title contains "${ds.expectedTitle}"`, xrayTestKey);
+      await devPage.verifyPageTitle(ds.expectedTitle as string);
 
-      // ── Step 3: Verify the main heading (from YAML) ──
       enhancedLogger.step(`Step 3: Verify homepage heading text`, xrayTestKey);
-      await devPage.verifyHeadingText(td.expectedHeading as string);
+      await devPage.verifyHeadingText(ds.expectedHeading as string);
 
-      // ── Step 4: Verify the URL is correct (from YAML) ──
-      enhancedLogger.step(`Step 4: Verify URL contains "${td.expectedUrl}"`, xrayTestKey);
-      await devPage.verifyUrl(td.expectedUrl as string);
+      enhancedLogger.step(`Step 4: Verify URL contains "${ds.expectedUrl}"`, xrayTestKey);
+      await devPage.verifyUrl(ds.expectedUrl as string);
 
       enhancedLogger.pass(`TC07 passed — Homepage loaded with correct title and heading`, xrayTestKey);
     }
   );
+  } // end for ds of proj107Sets
 
 
   // ============================================================================
@@ -221,47 +213,43 @@ test.describe('Playwright.dev Navigation Tests', () => {
   //  └──────────────────────────────────────────────────────────────────────┘
   //
   // ============================================================================
+  // ── Data-driven: load all data sets for PROJ-108 ──
+  const proj108Enabled = isTestEnabled(DATA_FILE, 'PROJ-108');
+  const proj108Sets    = getTestDataSets(DATA_FILE, 'PROJ-108');
+
+  for (const ds of proj108Sets) {
   test(
-    'TC08: Click Docs tab and verify Installation page title',
+    `TC08: Click Docs tab and verify Installation page title [${ds.label}]`,
     {
       annotation: { type: 'xray', description: 'PROJ-108' },
     },
     async ({ page, xrayTestKey }) => {
+      if (!proj108Enabled) test.skip();
 
-      // ── Load test data from YAML (data-driven) ──
-      const td = getTestData(DATA_FILE, 'PROJ-108');
-
-      // ── Skip if run: no in YAML ──
-      if (!isTestEnabled(DATA_FILE, 'PROJ-108')) test.skip();
-
-      enhancedLogger.section(`▶ Running Test: ${td.testCase} | XRAY: ${xrayTestKey}`);
-      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey}`, xrayTestKey);
+      enhancedLogger.section(`▶ Running Test: TC08 [${ds.label}] | XRAY: ${xrayTestKey}`);
+      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey} [${ds.label}]`, xrayTestKey);
 
       const devPage = new PlaywrightDevPage(page);
 
-      // Step 1: Start at the homepage
       enhancedLogger.step('Step 1: Navigate to the homepage', xrayTestKey);
       await devPage.navigateToHomePage();
 
-      // Step 2: Click "Docs" in the navbar
       enhancedLogger.step('Step 2: Click the "Docs" navigation tab', xrayTestKey);
       await devPage.clickDocsTab();
 
-      // Step 3: Verify the page title (from YAML)
-      enhancedLogger.step(`Step 3: Verify page title contains "${td.expectedTitle}"`, xrayTestKey);
-      await devPage.verifyPageTitle(td.expectedTitle as string);
+      enhancedLogger.step(`Step 3: Verify page title contains "${ds.expectedTitle}"`, xrayTestKey);
+      await devPage.verifyPageTitle(ds.expectedTitle as string);
 
-      // Step 4: Verify the main heading (from YAML)
-      enhancedLogger.step(`Step 4: Verify heading text is "${td.expectedHeading}"`, xrayTestKey);
-      await devPage.verifyHeadingText(td.expectedHeading as string);
+      enhancedLogger.step(`Step 4: Verify heading text is "${ds.expectedHeading}"`, xrayTestKey);
+      await devPage.verifyHeadingText(ds.expectedHeading as string);
 
-      // Step 5: Verify the URL (from YAML)
-      enhancedLogger.step(`Step 5: Verify URL contains "${td.expectedUrl}"`, xrayTestKey);
-      await devPage.verifyUrl(td.expectedUrl as string);
+      enhancedLogger.step(`Step 5: Verify URL contains "${ds.expectedUrl}"`, xrayTestKey);
+      await devPage.verifyUrl(ds.expectedUrl as string);
 
       enhancedLogger.pass(`TC08 passed — Docs tab navigated to Installation page`, xrayTestKey);
     }
   );
+  } // end for ds of proj108Sets
 
 
   // ============================================================================
@@ -280,21 +268,21 @@ test.describe('Playwright.dev Navigation Tests', () => {
   //  └──────────────────────────────────────────────────────────────────────┘
   //
   // ============================================================================
+  // ── Data-driven: load all data sets for PROJ-109 ──
+  const proj109Enabled = isTestEnabled(DATA_FILE, 'PROJ-109');
+  const proj109Sets    = getTestDataSets(DATA_FILE, 'PROJ-109');
+
+  for (const ds of proj109Sets) {
   test(
-    'TC09: Click API tab and verify Playwright Library page title',
+    `TC09: Click API tab and verify Playwright Library page title [${ds.label}]`,
     {
       annotation: { type: 'xray', description: 'PROJ-109' },
     },
     async ({ page, xrayTestKey }) => {
+      if (!proj109Enabled) test.skip();
 
-      // ── Load test data from YAML (data-driven) ──
-      const td = getTestData(DATA_FILE, 'PROJ-109');
-
-      // ── Skip if run: no in YAML ──
-      if (!isTestEnabled(DATA_FILE, 'PROJ-109')) test.skip();
-
-      enhancedLogger.section(`▶ Running Test: ${td.testCase} | XRAY: ${xrayTestKey}`);
-      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey}`, xrayTestKey);
+      enhancedLogger.section(`▶ Running Test: TC09 [${ds.label}] | XRAY: ${xrayTestKey}`);
+      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey} [${ds.label}]`, xrayTestKey);
 
       const devPage = new PlaywrightDevPage(page);
 
@@ -304,18 +292,19 @@ test.describe('Playwright.dev Navigation Tests', () => {
       enhancedLogger.step('Step 2: Click the "API" navigation tab', xrayTestKey);
       await devPage.clickApiTab();
 
-      enhancedLogger.step(`Step 3: Verify page title contains "${td.expectedTitle}"`, xrayTestKey);
-      await devPage.verifyPageTitle(td.expectedTitle as string);
+      enhancedLogger.step(`Step 3: Verify page title contains "${ds.expectedTitle}"`, xrayTestKey);
+      await devPage.verifyPageTitle(ds.expectedTitle as string);
 
-      enhancedLogger.step(`Step 4: Verify heading text is "${td.expectedHeading}"`, xrayTestKey);
-      await devPage.verifyHeadingText(td.expectedHeading as string);
+      enhancedLogger.step(`Step 4: Verify heading text is "${ds.expectedHeading}"`, xrayTestKey);
+      await devPage.verifyHeadingText(ds.expectedHeading as string);
 
-      enhancedLogger.step(`Step 5: Verify URL contains "${td.expectedUrl}"`, xrayTestKey);
-      await devPage.verifyUrl(td.expectedUrl as string);
+      enhancedLogger.step(`Step 5: Verify URL contains "${ds.expectedUrl}"`, xrayTestKey);
+      await devPage.verifyUrl(ds.expectedUrl as string);
 
       enhancedLogger.pass(`TC09 passed — API tab navigated to Playwright Library page`, xrayTestKey);
     }
   );
+  } // end for ds of proj109Sets
 
 
   // ============================================================================
@@ -334,21 +323,21 @@ test.describe('Playwright.dev Navigation Tests', () => {
   //  └──────────────────────────────────────────────────────────────────────┘
   //
   // ============================================================================
+  // ── Data-driven: load all data sets for PROJ-110 ──
+  const proj110Enabled = isTestEnabled(DATA_FILE, 'PROJ-110');
+  const proj110Sets    = getTestDataSets(DATA_FILE, 'PROJ-110');
+
+  for (const ds of proj110Sets) {
   test(
-    'TC10: Click Community tab and verify Welcome page title',
+    `TC10: Click Community tab and verify Welcome page title [${ds.label}]`,
     {
       annotation: { type: 'xray', description: 'PROJ-110' },
     },
     async ({ page, xrayTestKey }) => {
+      if (!proj110Enabled) test.skip();
 
-      // ── Load test data from YAML (data-driven) ──
-      const td = getTestData(DATA_FILE, 'PROJ-110');
-
-      // ── Skip if run: no in YAML ──
-      if (!isTestEnabled(DATA_FILE, 'PROJ-110')) test.skip();
-
-      enhancedLogger.section(`▶ Running Test: ${td.testCase} | XRAY: ${xrayTestKey}`);
-      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey}`, xrayTestKey);
+      enhancedLogger.section(`▶ Running Test: TC10 [${ds.label}] | XRAY: ${xrayTestKey}`);
+      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey} [${ds.label}]`, xrayTestKey);
 
       const devPage = new PlaywrightDevPage(page);
 
@@ -358,18 +347,19 @@ test.describe('Playwright.dev Navigation Tests', () => {
       enhancedLogger.step('Step 2: Click the "Community" navigation tab', xrayTestKey);
       await devPage.clickCommunityTab();
 
-      enhancedLogger.step(`Step 3: Verify page title contains "${td.expectedTitle}"`, xrayTestKey);
-      await devPage.verifyPageTitle(td.expectedTitle as string);
+      enhancedLogger.step(`Step 3: Verify page title contains "${ds.expectedTitle}"`, xrayTestKey);
+      await devPage.verifyPageTitle(ds.expectedTitle as string);
 
-      enhancedLogger.step(`Step 4: Verify heading text is "${td.expectedHeading}"`, xrayTestKey);
-      await devPage.verifyHeadingText(td.expectedHeading as string);
+      enhancedLogger.step(`Step 4: Verify heading text is "${ds.expectedHeading}"`, xrayTestKey);
+      await devPage.verifyHeadingText(ds.expectedHeading as string);
 
-      enhancedLogger.step(`Step 5: Verify URL contains "${td.expectedUrl}"`, xrayTestKey);
-      await devPage.verifyUrl(td.expectedUrl as string);
+      enhancedLogger.step(`Step 5: Verify URL contains "${ds.expectedUrl}"`, xrayTestKey);
+      await devPage.verifyUrl(ds.expectedUrl as string);
 
       enhancedLogger.pass(`TC10 passed — Community tab navigated to Welcome page`, xrayTestKey);
     }
   );
+  } // end for ds of proj110Sets
 
 
   // ============================================================================
@@ -392,39 +382,39 @@ test.describe('Playwright.dev Navigation Tests', () => {
   //  └──────────────────────────────────────────────────────────────────────┘
   //
   // ============================================================================
+  // ── Data-driven: load all data sets for PROJ-111 ──
+  const proj111Enabled = isTestEnabled(DATA_FILE, 'PROJ-111');
+  const proj111Sets    = getTestDataSets(DATA_FILE, 'PROJ-111');
+
+  for (const ds of proj111Sets) {
   test(
-    'TC11: Switch to Python language and verify Python page title',
+    `TC11: Switch to Python language and verify Python page title [${ds.label}]`,
     {
       annotation: { type: 'xray', description: 'PROJ-111' },
     },
     async ({ page, xrayTestKey }) => {
+      if (!proj111Enabled) test.skip();
 
-      // ── Load test data from YAML (data-driven) ──
-      const td = getTestData(DATA_FILE, 'PROJ-111');
-
-      // ── Skip if run: no in YAML ──
-      if (!isTestEnabled(DATA_FILE, 'PROJ-111')) test.skip();
-
-      enhancedLogger.section(`▶ Running Test: ${td.testCase} | XRAY: ${xrayTestKey}`);
-      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey}`, xrayTestKey);
+      enhancedLogger.section(`▶ Running Test: TC11 [${ds.label}] | XRAY: ${xrayTestKey}`);
+      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey} [${ds.label}]`, xrayTestKey);
 
       const devPage = new PlaywrightDevPage(page);
 
       enhancedLogger.step('Step 1: Navigate to the homepage', xrayTestKey);
       await devPage.navigateToHomePage();
 
-      // Step 2: Switch language from Node.js to Python
       enhancedLogger.step('Step 2: Open language dropdown and select "Python"', xrayTestKey);
       await devPage.switchToPython();
 
-      enhancedLogger.step(`Step 3: Verify page title contains "${td.expectedTitle}"`, xrayTestKey);
-      await devPage.verifyPageTitle(td.expectedTitle as string);
+      enhancedLogger.step(`Step 3: Verify page title contains "${ds.expectedTitle}"`, xrayTestKey);
+      await devPage.verifyPageTitle(ds.expectedTitle as string);
 
-      enhancedLogger.step(`Step 4: Verify URL contains "${td.expectedUrl}"`, xrayTestKey);
-      await devPage.verifyUrl(td.expectedUrl as string);
+      enhancedLogger.step(`Step 4: Verify URL contains "${ds.expectedUrl}"`, xrayTestKey);
+      await devPage.verifyUrl(ds.expectedUrl as string);
 
       enhancedLogger.pass(`TC11 passed — Language switched to Python successfully`, xrayTestKey);
     }
   );
+  } // end for ds of proj111Sets
 
 });
