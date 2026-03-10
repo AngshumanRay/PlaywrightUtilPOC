@@ -810,6 +810,110 @@ await expect(page.locator('#page-title')).toHaveText('My Record');
 
 ---
 
+## 🔁 Parameterized Testing — Run One Test with Multiple Data Sets
+
+### What is Parameterized Testing?
+
+Instead of copy-pasting the same test N times with different inputs, write it **ONCE** and let the framework run it N times automatically — each with its own data, its own name, and its own result in the report.
+
+### When to Use It
+
+- Testing login with multiple user types (admin, regular, guest)
+- Testing forms with valid/invalid/edge-case inputs
+- Testing the same flow across different environments or configurations
+
+### Step-by-Step: How to Write a Parameterized Test
+
+#### Step 1: Add `dataSets:` array to your YAML
+
+```yaml
+# test-data/ui-tests.yaml
+PROJ-101:
+  run: yes
+  testCase: "TC01: Valid login"
+  dataSets:
+    - label: "Standard user"
+      username: "tomsmith"
+      password: "${ENC:U2FsdGVkX1+8pM...}"
+      expectedUrlFragment: "/secure"
+    - label: "Admin user"
+      username: "admin"
+      password: "${ENC:U2FsdGVkX1/xyz...}"
+      expectedUrlFragment: "/admin/dashboard"
+    - label: "Read-only user"
+      username: "viewer"
+      password: "${ENC:U2FsdGVkX1/abc...}"
+      expectedUrlFragment: "/dashboard"
+```
+
+#### Step 2: Use `getTestDataSets()` in your test
+
+```typescript
+import { test, expect } from '../utils/framework/xray-test-fixture';
+import { enhancedLogger } from '../utils/helpers/enhanced-logger';
+import { getTestDataSets, isTestEnabled } from '../utils/helpers/test-data-loader';
+
+const DATA_FILE = 'ui-tests.yaml';
+
+test.describe('Login Feature Tests', () => {
+  // Load ONCE outside the loop
+  const proj101Enabled = isTestEnabled(DATA_FILE, 'PROJ-101');
+  const proj101Sets    = getTestDataSets(DATA_FILE, 'PROJ-101');
+
+  // Loop creates N tests — one per data set
+  for (const ds of proj101Sets) {
+    test(`TC01: Login [${ds.label}]`,
+      { annotation: { type: 'xray', description: 'PROJ-101' } },
+      async ({ page, xrayTestKey }) => {
+        if (!proj101Enabled) test.skip();
+
+        enhancedLogger.step(`Step 1: Navigate to login page`, xrayTestKey);
+        await page.goto('https://the-internet.herokuapp.com/login');
+
+        enhancedLogger.step(`Step 2: Enter credentials for ${ds.label}`, xrayTestKey);
+        await page.getByLabel('Username').fill(ds.username as string);
+        await page.getByLabel('Password').fill(ds.password as string);
+        await page.getByRole('button', { name: 'Login' }).click();
+
+        enhancedLogger.step(`Step 3: Verify redirect`, xrayTestKey);
+        expect(page.url()).toContain(ds.expectedUrlFragment as string);
+
+        enhancedLogger.pass(`TC01 passed [${ds.label}]`, xrayTestKey);
+      }
+    );
+  }
+});
+```
+
+#### Step 3: Run and see N separate tests
+
+```bash
+npm test
+```
+
+You'll see:
+```
+✅ PASS  TC01: Login [Standard user]
+✅ PASS  TC01: Login [Admin user]
+✅ PASS  TC01: Login [Read-only user]
+```
+
+### What If I Don't Have `dataSets:`?
+
+No problem! `getTestDataSets()` is backward compatible. If your YAML has no `dataSets:` array, it returns a single-item array `[{ label: 'default', index: 0, ...allYourFields }]`. Your existing tests don't need to change.
+
+### Key Points
+
+| Concept | Details |
+|---------|---------|
+| `dataSets:` | YAML array — each item becomes a separate test run |
+| `label:` | Human-readable name shown in test title (e.g., "Admin user") |
+| `getTestDataSets()` | Returns `DataSetEntry[]` — always at least 1 item |
+| `ds.fieldName` | Access any field from the data set (username, password, etc.) |
+| `[${ds.label}]` | Put this in your test name so each run is distinguishable |
+
+---
+
 ## ❓ Quick-Lookup Table
 
 | I want to... | What to type |
@@ -858,4 +962,4 @@ await expect(page.locator('#page-title')).toHaveText('My Record');
 
 ---
 
-*Last updated: 6 March 2026*
+*Last updated: 10 March 2026*

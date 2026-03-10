@@ -10,7 +10,7 @@
 ## ⚡ Quick Start (Already Set Up? Run Tests in 10 Seconds)
 
 ```bash
-npm test                       # Run all 13 tests (3 Login + 3 API + 5 Navigation + 2 Iframe) → results go to JIRA + HTML report
+npm test                       # Run all 14 tests (4 Login + 3 API + 5 Navigation + 2 Iframe) → results go to JIRA + HTML report
 open reports/execution-report-*.html   # View the visual report in your browser
 ```
 
@@ -23,8 +23,10 @@ open reports/execution-report-*.html   # View the visual report in your browser
 | Document | What You'll Learn | Best For |
 |----------|-------------------|----------|
 | **[README.md](README.md)** (you're here) | Setup, install, run commands, iframe guide, troubleshooting | **Everyone — start here** |
+| **[GETTING_STARTED.md](GETTING_STARTED.md)** | Quick start for NEW consumers (clone → init → run) | **People receiving this framework for the first time** |
 | **[WRITE_A_TEST.md](WRITE_A_TEST.md)** | Copy-paste guide to write your first test (includes iframe section) | **Non-technical users** |
 | **[CAPABILITIES.md](CAPABILITIES.md)** | Every feature explained in plain English (includes iframe guide) | **New team members exploring the framework** |
+| **[SKILLS.md](SKILLS.md)** | Framework skills & techniques at a glance | **Quick reference for what the framework can do** |
 | **[WALKTHROUGH.md](WALKTHROUGH.md)** | End-to-end XRAY flow with diagrams | **Anyone learning how JIRA reporting works** |
 | **[HOWTO_5_NAVIGATION_TESTS.md](HOWTO_5_NAVIGATION_TESTS.md)** | Step-by-step guide: how the 5 navigation tests were built | **Anyone adding new test suites** |
 | **[docs/RUN_REPORT_*.md](docs/)** | Auto-generated run reports | Anyone reviewing past test runs |
@@ -131,15 +133,21 @@ project-root/
 ├── config/
 │   └── environment.ts            ← Reads .env file, exports clean config object
 │
+├── scripts/                      ← BUILD & INIT SCRIPTS
+│   └── init-project.ts           ← Project initializer for new consumers (npm run init)
+│
 ├── playwright.config.ts          ← Playwright settings (browsers, timeouts, etc.)
 ├── .env                          ← YOUR credentials (DO NOT COMMIT TO GIT!)
 ├── .env.example                  ← Template showing what .env should look like
+├── .frameworkrc                  ← Feature toggle config (enable/disable capabilities)
 ├── .gitignore                    ← Files excluded from Git
 ├── tsconfig.json                 ← TypeScript compiler settings
 ├── package.json                  ← Project dependencies and npm scripts
 │
+├── GETTING_STARTED.md            ← 🚀 Quick start for NEW consumers
 ├── WRITE_A_TEST.md               ← ✍️  How to write a test (zero coding knowledge needed)
 ├── CAPABILITIES.md               ← 🧰 What can this framework do?
+├── SKILLS.md                     ← 🎯 Framework skills & techniques at a glance
 ├── WALKTHROUGH.md                ← 📖 How the XRAY flow works end-to-end
 ├── HOWTO_5_NAVIGATION_TESTS.md   ← 🧭 Step-by-step: how the 5 navigation tests were built
 ├── README.md                     ← 📚 Setup guide (this file)
@@ -248,6 +256,9 @@ ENCRYPTION_KEY=your-strong-passphrase-min-16-chars
 All commands are run from the project root directory in your terminal:
 
 ```bash
+# Initialize project for first-time consumers (creates .env, starter templates, installs browsers)
+npm run init
+
 # Run ALL tests (UI + API + Navigation + Iframe, with JIRA XRAY integration)
 npm test
 
@@ -283,6 +294,9 @@ npm run lint
 
 # Encrypt a password for use in YAML files or .env
 npm run encrypt-password
+
+# Clean up generated artifacts (reports, logs, test-results)
+npm run clean
 ```
 
 > **New to tests?** Just run `npm test` — it runs everything and generates the HTML report in `reports/`.
@@ -532,6 +546,45 @@ PROJ-101:
   expectedUrlFragment: "/secure"
 ```
 
+### 💡 Parameterized Testing: Run the SAME Test with MULTIPLE Data Sets
+
+Use `getTestDataSets()` + `dataSets:` in YAML to run a test N times with different inputs:
+
+```typescript
+import { getTestDataSets, isTestEnabled } from '../utils/helpers/test-data-loader';
+
+const DATA_FILE = 'ui-tests.yaml';
+const proj101Enabled = isTestEnabled(DATA_FILE, 'PROJ-101');
+const proj101Sets    = getTestDataSets(DATA_FILE, 'PROJ-101');
+
+for (const ds of proj101Sets) {
+  test(`TC01: Login [${ds.label}]`,
+    { annotation: { type: 'xray', description: 'PROJ-101' } },
+    async ({ page, xrayTestKey }) => {
+      if (!proj101Enabled) test.skip();
+      await page.getByLabel('Username').fill(ds.username as string);
+      await page.getByLabel('Password').fill(ds.password as string);
+    }
+  );
+}
+```
+
+YAML with `dataSets:` array:
+```yaml
+PROJ-101:
+  run: yes
+  testCase: "TC01: Login"
+  dataSets:
+    - label: "Standard user"
+      username: "tomsmith"
+      password: "${ENC:U2FsdGVkX1+8pM...}"
+    - label: "Admin user"
+      username: "admin"
+      password: "${ENC:U2FsdGVkX1/xyz...}"
+```
+
+This generates **two tests**: `TC01: Login [Standard user]` and `TC01: Login [Admin user]`. If there is NO `dataSets:` array, `getTestDataSets()` returns a single `[{ label: 'default', ...allFields }]` — fully backward compatible.
+
 > 🔐 **Encrypt passwords in YAML** — Use `${ENC:ciphertext}` to store encrypted values.
 > Run `npm run encrypt-password` to generate the ciphertext. The loader auto-decrypts at runtime.
 > See the [Encryption section in CAPABILITIES.md](CAPABILITIES.md#-security--encryption) for details.
@@ -768,10 +821,16 @@ npm run test:debug
 | **ENCRYPTION_KEY** | The secret passphrase in `.env` used to encrypt/decrypt passwords (min 16 chars) |
 | **YAML** | A human-readable file format used to store test data (`.yaml` files in `test-data/`) |
 | **Data-Driven Testing** | Running the same test code with different input data from external files (YAML/Excel) |
+| **Parameterized Testing** | One test definition × N data sets = N test runs. Use `dataSets:` in YAML + `getTestDataSets()` in code |
+| **`dataSets:`** | YAML array under a test case key — each item becomes a separate test run with its own `label` |
+| **`getTestDataSets()`** | Function that returns `DataSetEntry[]` — one item per data set, or a single `[{label:'default',...}]` if no `dataSets:` |
+| **`.frameworkrc`** | Feature toggle config file — enable/disable capabilities without changing code |
+| **`npm run init`** | Project initializer for new consumers — creates `.env`, starter templates, installs browsers |
 
 ---
 
-*Last updated: 6 March 2026*
+*Last updated: 7 March 2026*
 *Framework: Playwright AutoAgent – AI Automation Framework*
-*Tests: 3 Login (UI) + 3 API (REST) + 5 Navigation (UI) + 2 Iframe (UI) = 13 total*
+*Tests: 4 Login (UI, parameterized) + 3 API (REST) + 5 Navigation (UI) + 2 Iframe (UI) = 14 total*
 *XRAY: Test Set = manual setup, Test Execution onward = fully automated*
+*Packaging: `npm run init` for new consumers | `.frameworkrc` for feature toggles*

@@ -72,12 +72,15 @@ cat > "package.json" << 'ENDOFFILE_package_json'
 {
   "name": "playwright-autoagent",
   "version": "1.0.0",
-  "description": "Playwright AutoAgent – AI Automation Framework",
-  "main": "index.js",
+  "description": "Playwright AutoAgent — AI-powered test automation framework with JIRA XRAY, data-driven YAML, encryption, iframe handling, and HTML reports",
+  "main": "utils/index.ts",
   "scripts": {
+    "init": "npx ts-node scripts/init-project.ts",
     "test": "npx playwright test",
     "test:login": "npx playwright test tests/login.test.ts",
     "test:api": "npx playwright test tests/api.test.ts",
+    "test:nav": "npx playwright test tests/playwright-dev.test.ts",
+    "test:iframe": "npx playwright test tests/salesforce-iframe.test.ts",
     "test:all": "npx playwright test",
 
     "test:headed": "RUN_HEADLESS=false npx playwright test",
@@ -104,15 +107,19 @@ cat > "package.json" << 'ENDOFFILE_package_json'
 
     "encrypt-password": "npx ts-node utils/security/crypto-helper.ts",
 
-    "lint": "npx tsc --noEmit"
+    "lint": "npx tsc --noEmit",
+    "clean": "rm -rf test-results playwright-report reports/execution-report-*.html logs/*.log dist"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["playwright", "automation", "testing", "jira", "xray", "data-driven", "yaml", "iframe", "encryption", "page-object"],
+  "author": "AngshumanRay",
   "license": "ISC",
-  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AngshumanRay/PlaywrightUtilPOC.git"
+  },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
-    "@types/node": "^25.3.2",
+    "@types/node": "^25.3.5",
     "@types/node-cron": "^3.0.11",
     "@types/pg": "^8.18.0",
     "@types/winston": "^2.4.4",
@@ -131,7 +138,8 @@ cat > "package.json" << 'ENDOFFILE_package_json'
     "pg": "^8.19.0",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "yaml": "^2.8.2"
   }
 }
 

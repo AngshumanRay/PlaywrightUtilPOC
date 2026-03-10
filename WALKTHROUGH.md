@@ -717,11 +717,13 @@ reports/execution-report-2026-03-03.html
 | `utils/reporting/report-generator.ts` | The "publisher" — builds the HTML report with charts, screenshots, and step logs |
 | `utils/helpers/enhanced-logger.ts` | The "data collector" — gathers structured log/perf/a11y data + PASS/FAIL log summary |
 | `utils/helpers/logger.ts` | The "announcer" — prints formatted, coloured messages in the terminal |
-| `utils/helpers/test-data-loader.ts` | The "librarian" — reads test input data from YAML files so tests don't hardcode values; supports `run: yes/no` toggle, `${ENV:...}` env var substitution, and `${ENC:...}` auto-decryption of encrypted passwords |
+| `utils/helpers/test-data-loader.ts` | The "librarian" — reads test input data from YAML files so tests don't hardcode values; supports `run: yes/no` toggle, `${ENV:...}` env var substitution, `${ENC:...}` auto-decryption, and `getTestDataSets()` for parameterized one-to-many testing |
 | `utils/helpers/screenshot.ts` | The "photographer" — captures a browser screenshot when a test fails |
 | `utils/security/crypto-helper.ts` | The "locksmith" — AES-256 encrypt/decrypt for passwords and secrets; includes an interactive CLI tool (`npm run encrypt-password`) to generate encrypted values for YAML or .env |
-| `test-data/*.yaml` | The "answer sheets" — 2 YAML files (`ui-tests.yaml` + `api-tests.yaml`) with test inputs, expected results, `run: yes/no` toggle, and `${ENC:...}` encrypted passwords |
+| `test-data/*.yaml` | The "answer sheets" — 2 YAML files (`ui-tests.yaml` + `api-tests.yaml`) with test inputs, expected results, `run: yes/no` toggle, `dataSets:` for parameterized runs, and `${ENC:...}` encrypted passwords |
 | `logs/test-run-*.log` | The "diary" — log file for each run, with a PASS/FAIL summary at the very top |
+| `scripts/init-project.ts` | The "doorman" — `npm run init` scaffolds the project for new consumers (creates `.env`, starter templates, installs browsers) |
+| `.frameworkrc` | The "control panel" — feature toggles to enable/disable capabilities without code changes |
 | `utils/framework/global-setup.ts` | The "pre-flight checklist" — runs once before any test (auth, fetch, create execution) |
 | `utils/framework/global-teardown.ts` | The "cleanup crew" — runs once after all tests (uploads results, generates report) |
 | `utils/framework/xray-test-fixture.ts` | The "score tracker" — wraps every test to save its result automatically |
@@ -964,6 +966,6 @@ When tests run, the terminal shows messages like this. Here's what each means:
 
 ---
 
-*Last updated: 6 March 2026*
-*Framework: Playwright AutoAgent – AI Automation Framework v1.4.0 — 13 tests (3 Login + 3 API + 5 Navigation + 2 Iframe), full HTML report, comprehensive XRAY integration*
+*Last updated: 7 March 2026*
+*Framework: Playwright AutoAgent – AI Automation Framework v1.4.0 — 14 tests (4 Login + 3 API + 5 Navigation + 2 Iframe), full HTML report, parameterized testing, packaging, comprehensive XRAY integration*
 *Next: Read [CAPABILITIES.md](CAPABILITIES.md) to explore every feature, or [WRITE_A_TEST.md](WRITE_A_TEST.md) to write your first test.*

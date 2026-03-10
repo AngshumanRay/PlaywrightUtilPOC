@@ -46,9 +46,12 @@ Each capability follows the same format:
 12. [🍪 Cookie & Popup Handling](#-cookie--popup-handling)
 13. [🔒 Security / Encryption](#-security--encryption)
 14. [📑 Excel / Data-Driven Testing](#-excel--data-driven-testing)
-15. [How to Add Your OWN New Utility](#how-to-add-your-own-new-utility)
-16. [Which File Does What (Cheat Sheet)](#which-file-does-what-cheat-sheet)
-17. [How to Enable/Disable Any Utility](#how-to-enabledisable-any-utility)
+15. [🔁 Parameterized Testing (One-to-Many)](#-parameterized-testing-one-to-many)
+16. [📦 Packaging & Distribution](#-packaging--distribution)
+17. [🔀 Feature Toggles (.frameworkrc)](#-feature-toggles-frameworkrc)
+18. [How to Add Your OWN New Utility](#how-to-add-your-own-new-utility)
+19. [Which File Does What (Cheat Sheet)](#which-file-does-what-cheat-sheet)
+20. [How to Enable/Disable Any Utility](#how-to-enabledisable-any-utility)
 
 ---
 
@@ -77,9 +80,12 @@ Here's everything this framework can do, at a glance:
 │     ✅ Screenshots           — automatic photos of the browser on failure │
 │     ✅ Logger                — color-coded terminal + log files w/ PASS/FAIL│
 │     ✅ YAML Data-Driven     — tests read inputs from external YAML files │
+│     ✅ Parameterized Testing — one test × N dataSets = N test runs       │
 │     ✅ Encrypted YAML       — ${ENC:...} auto-decrypts passwords in YAML │
 │     ✅ Cookie/Popup handling — auto-dismisses banners and JS popups      │
 │     ✅ Accessibility (a11y)  — WCAG scan run automatically after each UI test│
+│     ✅ Feature Toggles      — .frameworkrc controls capabilities on/off  │
+│     ✅ Project Init Script  — npm run init scaffolds new consumers       │
 │                                                                          │
 │  🟡 READY (just add credentials in .env to activate):                    │
 │     📋 JIRA XRAY      — fetch test cases, create executions, push results│
@@ -1756,6 +1762,178 @@ and import `readExcelSheet` in your test.
 
 ---
 
+## 🔁 Parameterized Testing (One-to-Many)
+
+### What is it? (Explained Like You're 5)
+
+Imagine you test the login page with ONE set of credentials. It works. Great.
+But your boss says: *"Now test it with 50 different users."*
+
+Writing 50 separate tests? Painful. Copy-pasting the same code 50 times? Messy.
+
+**Parameterized Testing** lets you write the test **ONCE** and run it **N times** with different data — automatically. Each run gets its own name, its own result, and its own entry in the HTML report.
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│                                                                          │
+│  ONE test definition  ×  N data sets  =  N test runs                    │
+│                                                                          │
+│  YAML:                                                                   │
+│    PROJ-101:                                                             │
+│      dataSets:                                                           │
+│        - label: "Standard user"   ──→  TC01: Login [Standard user]      │
+│          username: "tomsmith"                                            │
+│        - label: "Admin user"      ──→  TC01: Login [Admin user]         │
+│          username: "admin"                                               │
+│        - label: "Read-only"       ──→  TC01: Login [Read-only]          │
+│          username: "viewer"                                              │
+│                                                                          │
+│  3 data sets → 3 separate test runs → 3 results in the HTML report     │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+### How to use it
+
+**Step 1:** Add `dataSets:` array in your YAML file:
+
+```yaml
+# test-data/ui-tests.yaml
+PROJ-101:
+  run: yes
+  testCase: "TC01: Valid login"
+  dataSets:
+    - label: "Standard user"
+      username: "tomsmith"
+      password: "${ENC:U2FsdGVkX1+8pM...}"
+      expectedUrlFragment: "/secure"
+    - label: "Admin user"
+      username: "admin"
+      password: "${ENC:U2FsdGVkX1/xyz...}"
+      expectedUrlFragment: "/admin/dashboard"
+```
+
+**Step 2:** Use `getTestDataSets()` in your test:
+
+```typescript
+import { getTestDataSets, isTestEnabled } from '../utils/helpers/test-data-loader';
+
+const DATA_FILE = 'ui-tests.yaml';
+const proj101Enabled = isTestEnabled(DATA_FILE, 'PROJ-101');
+const proj101Sets    = getTestDataSets(DATA_FILE, 'PROJ-101');
+
+for (const ds of proj101Sets) {
+  test(`TC01: Login [${ds.label}]`,
+    { annotation: { type: 'xray', description: 'PROJ-101' } },
+    async ({ page, xrayTestKey }) => {
+      if (!proj101Enabled) test.skip();
+      await page.getByLabel('Username').fill(ds.username as string);
+      await page.getByLabel('Password').fill(ds.password as string);
+      // ...
+    }
+  );
+}
+```
+
+### Backward Compatibility
+
+If a YAML entry has **no** `dataSets:` array, `getTestDataSets()` wraps all its flat fields into a single-item array `[{ label: 'default', index: 0, ...allFields }]`. **Existing tests don't need to change.**
+
+### Key Types
+
+| Type | Description |
+|------|-------------|
+| `DataSetEntry` | `{ label: string, index: number, [key: string]: unknown }` — one data set item |
+| `getTestDataSets(file, key)` | Returns `DataSetEntry[]` — always at least 1 item |
+
+### Where is the code?
+- `utils/helpers/test-data-loader.ts` → `getTestDataSets()` function
+- `test-data/ui-tests.yaml` → `dataSets:` array examples
+
+---
+
+## 📦 Packaging & Distribution
+
+### What is it?
+
+When you share this framework with a new team or consumer, they need a **one-command setup** to get running. The packaging system provides:
+
+| Component | What It Does |
+|-----------|-------------|
+| `npm run init` | Interactive project initializer — creates `.env`, starter templates, installs browsers |
+| `scripts/init-project.ts` | The script behind `npm run init` |
+| `.frameworkrc` | Feature toggle config — flip capabilities on/off without code changes |
+| `npm run clean` | Removes generated artifacts (reports, logs, test-results, dist) |
+| `.env.example` | Template for new consumers — shows all available settings |
+| `GETTING_STARTED.md` | Complete guide for people receiving this framework for the first time |
+
+### Consumer Workflow (5 Steps)
+
+```
+1. Clone the repository (or receive the zip)
+2. npm install          ← install dependencies
+3. npm run init         ← creates .env, starter templates, installs Chromium
+4. Edit .env            ← fill in YOUR credentials/URLs
+5. npm test             ← run all tests!
+```
+
+### What `npm run init` Does
+
+```
+╔═══════════════════════════════════════════════════════════════════════════╗
+║       🚀  Playwright AutoAgent — Project Initializer                     ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+📋 Step 1: Creates .env from .env.example (if missing)
+📁 Step 2: Ensures directories exist (tests, pages, test-data, logs, reports)
+📄 Step 3: Creates starter YAML templates (.starter files)
+📄 Step 4: Creates starter Page Object + Test file (if tests/ is empty)
+🌐 Step 5: Installs Playwright Chromium browser
+```
+
+### Where is the code?
+- `scripts/init-project.ts` — the full initializer script
+- `package.json` → `"init"` and `"clean"` scripts
+- `GETTING_STARTED.md` — consumer-facing guide
+
+---
+
+## 🔀 Feature Toggles (.frameworkrc)
+
+### What is it?
+
+A simple config file that lets you **flip framework capabilities on/off** without touching any code. Think of it as a control panel with switches.
+
+### The File: `.frameworkrc`
+
+```ini
+# ─── CORE FEATURES ───
+DATA_DRIVEN=true          # YAML data-driven testing
+ENCRYPTION=true           # ${ENC:...} auto-decryption
+HTML_REPORT=true          # Auto-generate HTML report
+ENHANCED_LOGGING=true     # Structured logging to file + console
+ACCESSIBILITY_SCAN=true   # axe-core scan after UI tests
+
+# ─── INTEGRATION FEATURES (need credentials in .env) ───
+XRAY_INTEGRATION=true     # JIRA XRAY auto-upload
+DATABASE=false             # Database seeding/cleanup
+EMAIL_VERIFICATION=false   # Email OTP/link verification
+
+# ─── TEST EXECUTION DEFAULTS ───
+RUN_HEADLESS=true          # Headless by default
+RUN_PARALLEL=false         # Sequential by default
+RUN_WORKERS=2              # Workers when parallel
+RUN_RETRIES=0              # No retries
+```
+
+### How to use it
+Just edit the file — set `true` or `false`. No code changes needed. The framework reads it at startup.
+
+### Where is the code?
+- `.frameworkrc` — the config file at project root
+
+---
+
 ## How to Add Your OWN New Utility
 
 Want to add something new? Maybe Teams notifications, AWS S3 upload, or a
@@ -1871,12 +2049,14 @@ The framework will show your tool in the Utility Status Dashboard:
 | **`utils/security/crypto-helper.ts`** | AES-256 encrypt/decrypt passwords and stored secrets |
 | **`utils/helpers/logger.ts`** | Color-coded terminal logging |
 | **`utils/helpers/enhanced-logger.ts`** | Structured data collector for the HTML report (logs, perf, a11y) + PASS/FAIL log summary |
-| **`utils/helpers/test-data-loader.ts`** | Reads test input data from YAML files in `test-data/`; supports `run: yes/no` selective execution, `${ENV:...}` env var substitution, and `${ENC:...}` auto-decryption of encrypted passwords |
+| **`utils/helpers/test-data-loader.ts`** | Reads test input data from YAML files in `test-data/`; supports `run: yes/no` selective execution, `${ENV:...}` env var substitution, `${ENC:...}` auto-decryption, and `getTestDataSets()` for parameterized one-to-many testing |
 | **`utils/helpers/screenshot.ts`** | Captures browser screenshots |
 | **`utils/index.ts`** | Barrel file — import anything from one place |
-| **`test-data/ui-tests.yaml`** | UI test data: Login + Navigation + Iframe (credentials with `${ENC:...}` encryption, URLs, form data, `run: yes/no` toggle) |
+| **`test-data/ui-tests.yaml`** | UI test data: Login + Navigation + Iframe (credentials with `${ENC:...}` encryption, `dataSets:` for parameterized runs, URLs, form data, `run: yes/no` toggle) |
 | **`test-data/api-tests.yaml`** | API test data: endpoints, payloads, expected status codes, `run: yes/no` toggle |
 | **`logs/test-run-*.log`** | Per-run log files with PASS/FAIL summary prepended at the top |
+| **`scripts/init-project.ts`** | Project initializer — `npm run init` creates `.env`, starter templates, installs browsers |
+| **`.frameworkrc`** | Feature toggle config — enable/disable capabilities without code changes |
 | **`playwright.config.ts`** | Playwright settings (browsers, timeouts, retries) |
 | **`.env` timeouts** | `TEST_TIMEOUT`, `EXPECT_TIMEOUT`, `ACTION_TIMEOUT`, `NAVIGATION_TIMEOUT` |
 | **`.env` viewport** | `VIEWPORT_WIDTH`, `VIEWPORT_HEIGHT` |
@@ -1902,6 +2082,9 @@ Every utility is controlled by your `.env` file. Here's the master switch for ea
 | **Encryption** | Set `ENCRYPTION_KEY` (min 16 chars) — enables `${ENC:...}` auto-decryption in YAML | Leave empty — `${ENC:...}` values stay as-is (warning logged) |
 | **Excel** | Import `readExcelSheet` in your test — no `.env` needed | Just don't use it |
 | **YAML Data-Driven** | Import `getTestData` in your test + add YAML files to `test-data/` | Just don't use it |
+| **Parameterized Testing** | Add `dataSets:` array in YAML + use `getTestDataSets()` in test code | Use flat YAML (no `dataSets:`) — `getTestDataSets()` returns a single `[{label:'default'}]` |
+| **Feature Toggles** | Edit `.frameworkrc` — set features to `true` or `false` | Delete `.frameworkrc` (framework uses defaults) |
+| **Project Init** | Run `npm run init` — creates `.env`, starters, installs browsers | Only needed once for new consumers |
 | **Screenshots** | Always on automatically | Can't disable |
 | **Logger** | Always on automatically | Can't disable |
 | **Log File PASS/FAIL** | Always on — summary prepended to log file after every run | Can't disable |
@@ -1916,7 +2099,7 @@ Every utility is controlled by your `.env` file. Here's the master switch for ea
 
 ---
 
-*Last updated: 6 March 2026*
+*Last updated: 7 March 2026*
 *Framework: Playwright AutoAgent – AI Automation Framework*
-*Tests: 3 Login (UI) + 3 API (REST) + 5 Navigation (UI) + 2 Iframe (UI) = 13 total*
+*Tests: 4 Login (UI, parameterized) + 3 API (REST) + 5 Navigation (UI) + 2 Iframe (UI) = 14 total*
 *Next: Read [WALKTHROUGH.md](WALKTHROUGH.md) to see the end-to-end XRAY flow, or [WRITE_A_TEST.md](WRITE_A_TEST.md) to write your first test.*

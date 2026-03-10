@@ -567,6 +567,6 @@ Follow these exact steps to add YOUR own tests:
 
 ---
 
-*Last updated: 6 March 2026*
+*Last updated: 8 March 2026*
 *Framework: Playwright AutoAgent – AI Automation Framework*
-*Tests: 3 Login (UI) + 3 API (REST) + 5 Navigation (UI) + 2 Iframe (UI) = 13 total*
+*Tests: 3 Login (UI; TC01 ×2 data sets) + 3 API (REST) + 5 Navigation (UI) + 2 Iframe (UI) = 14 total executions*
