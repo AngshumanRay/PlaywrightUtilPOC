@@ -231,6 +231,85 @@ export function isTestEnabled(fileName: string, xrayKey: string): boolean {
   return td.run === true;
 }
 
+// =============================================================================
+// ONE-TO-MANY: PARAMETERIZED DATA SETS
+// =============================================================================
+
+/**
+ * A single data set for parameterized testing.
+ *
+ * When a YAML entry has a `dataSets:` array, each item becomes a DataSetEntry.
+ * The `label` field is shown in the test name to distinguish iterations.
+ *
+ * YAML format:
+ *   PROJ-101:
+ *     run: yes
+ *     testCase: "TC01: Valid login"
+ *     dataSets:
+ *       - label: "Standard user"
+ *         username: "tomsmith"
+ *         password: "SuperSecret!"
+ *       - label: "Admin user"
+ *         username: "admin"
+ *         password: "AdminPass!"
+ */
+export interface DataSetEntry {
+  /** Human-readable label shown in test name (e.g., "Standard user") */
+  label: string;
+  /** Index of this data set (0-based) — auto-assigned by the loader */
+  index: number;
+  /** All data fields from this data set item */
+  [key: string]: unknown;
+}
+
+/**
+ * Get parameterized data sets for a test case.
+ *
+ * If the YAML entry has a `dataSets:` array, returns each item as a DataSetEntry.
+ * If there is NO `dataSets:` array, returns a SINGLE DataSetEntry containing
+ * all the flat fields (backward compatible — existing tests don't need to change).
+ *
+ * @param fileName  Name of the YAML file (e.g., 'ui-tests.yaml')
+ * @param xrayKey   The XRAY test case key (e.g., 'PROJ-101')
+ * @returns         Array of DataSetEntry objects (always at least 1 item)
+ *
+ * @example ONE-TO-MANY (YAML has dataSets array):
+ *   const sets = getTestDataSets('ui-tests.yaml', 'PROJ-101');
+ *   // Returns: [
+ *   //   { label: "Standard user", index: 0, username: "tomsmith", password: "..." },
+ *   //   { label: "Admin user",    index: 1, username: "admin",    password: "..." },
+ *   // ]
+ *
+ * @example SINGLE DATA (YAML has no dataSets — backward compatible):
+ *   const sets = getTestDataSets('ui-tests.yaml', 'PROJ-102');
+ *   // Returns: [
+ *   //   { label: "default", index: 0, username: "tomsmith", password: "wrong", ... }
+ *   // ]
+ */
+export function getTestDataSets(fileName: string, xrayKey: string): DataSetEntry[] {
+  const td = getTestData(fileName, xrayKey);
+
+  // ── CASE 1: dataSets array exists → return each item ──
+  if (Array.isArray(td.dataSets)) {
+    return (td.dataSets as Record<string, unknown>[]).map((item, idx) => ({
+      label: (item.label as string) || `Data set ${idx + 1}`,
+      index: idx,
+      ...item,
+    }));
+  }
+
+  // ── CASE 2: No dataSets → wrap the flat fields into a single-item array ──
+  // Strip out the control fields (run, testCase) — return only data fields
+  const { run: _run, testCase: _tc, ...dataFields } = td;
+  return [
+    {
+      label: 'default',
+      index: 0,
+      ...dataFields,
+    },
+  ];
+}
+
 /**
  * Get all XRAY keys defined in a test data file.
  * Useful for generating test permutations or listing available test cases.

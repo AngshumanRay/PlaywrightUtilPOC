@@ -50,7 +50,7 @@ import { LoginPage } from '../pages/LoginPage';
 import { enhancedLogger } from '../utils/helpers/enhanced-logger';
 
 // Import the data-driven test data loader (reads from YAML files)
-import { getTestData, isTestEnabled } from '../utils/helpers/test-data-loader';
+import { getTestData, getTestDataSets, isTestEnabled } from '../utils/helpers/test-data-loader';
 
 // =============================================================================
 // TEST DATA — DATA-DRIVEN (loaded from test-data/ui-tests.yaml)
@@ -75,7 +75,7 @@ const DATA_FILE = 'ui-tests.yaml';
 test.describe('Login Feature Tests', () => {
 
   // ============================================================================
-  // TEST 1: Successful Login with Valid Credentials
+  // TEST 1: Successful Login with Valid Credentials (PARAMETERIZED)
   // ============================================================================
   // WHAT THIS TEST DOES:
   //   1. Opens the login page
@@ -83,50 +83,57 @@ test.describe('Login Feature Tests', () => {
   //   3. Clicks the Login button
   //   4. Verifies the user is redirected to the dashboard/home page
   //
+  // ONE-TO-MANY: This test runs ONCE per dataSets entry in ui-tests.yaml.
+  //   If PROJ-101 has 2 dataSets items, Playwright creates 2 separate tests:
+  //     TC01 [Standard user]            → runs with data set 1
+  //     TC01 [Same user — repeat]       → runs with data set 2
+  //   All report to the same XRAY key PROJ-101.
+  //
   // XRAY MAPPING:
   //   annotation: { type: 'xray', description: 'PROJ-101' }
-  //   → This test reports its result to XRAY test case PROJ-101
-  //   → Change 'PROJ-101' to your actual XRAY test case key
   //
   // EXPECTED OUTCOME: PASS (user successfully logs in)
   // ============================================================================
-  test(
-    'TC01: Valid credentials should log the user in successfully',
-    {
-      // This annotation LINKS this Playwright test to the XRAY test case "PROJ-101"
-      // When this test finishes, the result (PASS/FAIL) is sent to PROJ-101 in XRAY
-      annotation: { type: 'xray', description: 'PROJ-101' },
-    },
-    async ({ page, xrayTestKey }) => {
 
-      // ── Load test data from YAML (data-driven) ──
-      const td = getTestData(DATA_FILE, 'PROJ-101');
+  // ── Skip the whole group if run: no in YAML ──
+  const proj101Enabled = isTestEnabled(DATA_FILE, 'PROJ-101');
+  const proj101Data    = getTestData(DATA_FILE, 'PROJ-101');
+  const proj101Sets    = getTestDataSets(DATA_FILE, 'PROJ-101');
 
-      // ── Skip if run: no in YAML ──
-      if (!isTestEnabled(DATA_FILE, 'PROJ-101')) test.skip();
+  for (const ds of proj101Sets) {
+    test(
+      `TC01: Valid credentials should log the user in successfully [${ds.label}]`,
+      {
+        annotation: { type: 'xray', description: 'PROJ-101' },
+      },
+      async ({ page, xrayTestKey }) => {
 
-      enhancedLogger.section(`▶ Running Test: ${td.testCase} | XRAY: ${xrayTestKey}`);
-      enhancedLogger.info(`📂 Test data loaded from ${DATA_FILE} for ${xrayTestKey}`, xrayTestKey);
+        // ── Skip if run: no in YAML ──
+        if (!proj101Enabled) test.skip();
 
-      const loginPage = new LoginPage(page);
+        enhancedLogger.section(`▶ Running Test: ${proj101Data.testCase} [${ds.label}] | XRAY: ${xrayTestKey}`);
+        enhancedLogger.info(`📂 Data set ${ds.index + 1}/${proj101Sets.length}: "${ds.label}"`, xrayTestKey);
 
-      // Step 1: Open the login page
-      enhancedLogger.step('Step 1: Navigate to the login page', xrayTestKey);
-      await loginPage.navigateToLoginPage();
+        const loginPage = new LoginPage(page);
 
-      // Step 2: Perform login with credentials from YAML
-      enhancedLogger.step('Step 2: Enter valid credentials and submit', xrayTestKey);
-      await loginPage.login(td.username as string, td.password as string);
+        // Step 1: Open the login page
+        enhancedLogger.step('Step 1: Navigate to the login page', xrayTestKey);
+        await loginPage.navigateToLoginPage();
 
-      // Step 3: Verify login was successful
-      enhancedLogger.step('Step 3: Verify user is now on the Secure Area page', xrayTestKey);
-      await loginPage.verifySuccessfulLogin();
+        // Step 2: Perform login with credentials from this data set
+        enhancedLogger.step(`Step 2: Enter credentials for "${ds.label}" and submit`, xrayTestKey);
+        await loginPage.login(ds.username as string, ds.password as string);
 
-      expect(loginPage.getCurrentUrl()).toContain(td.expectedUrlFragment as string);
+        // Step 3: Verify login was successful
+        enhancedLogger.step('Step 3: Verify user is now on the Secure Area page', xrayTestKey);
+        await loginPage.verifySuccessfulLogin();
 
-      enhancedLogger.pass(`TC01 passed — User logged in successfully`, xrayTestKey);
-    }
-  );
+        expect(loginPage.getCurrentUrl()).toContain(ds.expectedUrlFragment as string);
+
+        enhancedLogger.pass(`TC01 passed [${ds.label}] — User logged in successfully`, xrayTestKey);
+      }
+    );
+  }
 
   // ============================================================================
   // TEST 2: Login Should Fail with Wrong Password

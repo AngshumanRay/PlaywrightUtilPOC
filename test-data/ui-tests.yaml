@@ -11,6 +11,13 @@
 # ║     • Below that, add any data fields your test needs                    ║
 # ║     • The test picks up each field by its key name                       ║
 # ║                                                                          ║
+# ║   ONE-TO-MANY (parameterized / data-driven):                            ║
+# ║     • Add a  dataSets:  array under any PROJ-XXX key                     ║
+# ║     • Each item in the array is one data set to iterate over             ║
+# ║     • Use  label:  inside each set — it appears in the test name         ║
+# ║     • The test auto-loops: one run per data set                          ║
+# ║     • Tests WITHOUT dataSets work exactly as before (single run)         ║
+# ║                                                                          ║
 # ║   ENCRYPTION:                                                            ║
 # ║     • Wrap sensitive values with ${ENC:ciphertext}                       ║
 # ║     • The loader auto-decrypts using ENCRYPTION_KEY from .env            ║
@@ -31,15 +38,28 @@
 #  Passwords are encrypted using ${ENC:ciphertext} syntax.
 #  The loader auto-decrypts them at runtime using ENCRYPTION_KEY from .env.
 #  Generate encrypted values with:  npm run encrypt-password
+#
+#  TC01 demonstrates ONE-TO-MANY parameterized testing:
+#    • dataSets: is an array — each item is one data set
+#    • label: appears in the test name (e.g., "TC01: Valid login [Standard user]")
+#    • The test auto-loops: one run per data set
+#    • All 3 runs report to the same XRAY key PROJ-101
 # ─────────────────────────────────────────────────────────────────────────────
 
 PROJ-101:
   run: yes
   testCase: "TC01: Valid credentials should log the user in successfully"
-  username: "tomsmith"
-  password: "${ENC:U2FsdGVkX1+8pM4itdDObuWaI5BrUJdIigtiBsHo04X2b7HWHZkibsti7BKnUAjA}"
-  expectedUrlFragment: "/secure"
-  expectedOutcome: "pass"
+  dataSets:
+    - label: "Standard user"
+      username: "tomsmith"
+      password: "${ENC:U2FsdGVkX1+8pM4itdDObuWaI5BrUJdIigtiBsHo04X2b7HWHZkibsti7BKnUAjA}"
+      expectedUrlFragment: "/secure"
+      expectedOutcome: "pass"
+    - label: "Same user — repeat validation"
+      username: "tomsmith"
+      password: "${ENC:U2FsdGVkX1+8pM4itdDObuWaI5BrUJdIigtiBsHo04X2b7HWHZkibsti7BKnUAjA}"
+      expectedUrlFragment: "/secure"
+      expectedOutcome: "pass"
 
 PROJ-102:
   run: yes
