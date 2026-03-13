@@ -16,17 +16,17 @@ This framework includes an **automated pipeline** that converts User Stories (wr
 into fully functional test cases and Playwright test scripts — with complete traceability.
 
 ```
-  ┌─────────────────────┐      npm run generate      ┌────────────────────────────────────┐
-  │  📖 USER STORY       │  ──────────────────────→   │  📋 TEST_CASES.md (documentation)   │
-  │  (YAML file)         │                            │  📂 test-data/*.yaml (test data)    │
-  │                      │                            │  🧪 tests/*.test.ts (test scripts)  │
-  │  user-stories/       │                            │  📄 pages/*Page.ts (page objects)    │
-  │  US-XX-feature.yaml  │                            └────────────────────────────────────┘
-  └─────────────────────┘
+  ┌─────────────────────┐      npm run generate      ┌────────────────────────────────────────────┐
+  │  📖 USER STORY       │  ──────────────────────→   │  📋 TEST_CASES.md (traceability matrix)     │
+  │  (YAML file)         │                            │  📝 manual-test-cases/*.md (manual QA TCs)  │
+  │                      │                            │  📂 test-data/*.yaml (test data)             │
+  │  user-stories/       │                            │  🧪 tests/*.test.ts (test scripts)           │
+  │  US-XX-feature.yaml  │                            │  📄 pages/*Page.ts (page objects)            │
+  └─────────────────────┘                            └────────────────────────────────────────────┘
 ```
 
 **The key idea**: You write the **WHAT** (User Stories + Acceptance Criteria), and the
-framework generates the **HOW** (test code, test data, page objects, documentation).
+framework generates the **HOW** (manual test cases, test code, test data, page objects, documentation).
 
 ---
 
@@ -41,8 +41,8 @@ framework generates the **HOW** (test code, test data, page objects, documentati
   ║                        generate)            & verify data)                     ║
   ║                                                                               ║
   ║   📖 US-XX.yaml      📋 TEST_CASES.md     🔧 Fix TODOs in     ✅ PASS/FAIL    ║
-  ║                       📂 test data          Page Objects        📊 HTML Report ║
-  ║                       🧪 test scripts                           📎 XRAY Upload ║
+  ║                       📝 manual test cases   Page Objects        📊 HTML Report ║
+  ║                       📂 test data                               📎 XRAY Upload ║
   ║                       📄 page objects                                          ║
   ║                                                                               ║
   ╚═════════════════════════════════════════════════════════════════════════════════╝
@@ -71,6 +71,7 @@ Every generated artifact links back to the original User Story:
 |-------|----------|---------|
 | **Business** | `user-stories/US-XX-feature.yaml` | User Story + Acceptance Criteria (source of truth) |
 | **Documentation** | `TEST_CASES.md` | Test cases with steps, expected results, traceability |
+| **Manual QA** | `manual-test-cases/US-XX-*-test-cases.md` | Standalone manual test cases (preconditions, steps, expected results, pass/fail) |
 | **Test Data** | `test-data/<feature>-tests.yaml` | YAML-driven data (keywords, URLs, expected values) |
 | **Test Script** | `tests/<feature>.test.ts` | Playwright test code linked to XRAY keys |
 | **Page Object** | `pages/<Feature>Page.ts` | Reusable page interaction methods |
@@ -231,29 +232,39 @@ The generator reads the `action` text and intelligently maps it to code. Here ar
 npm run generate
 ```
 
-This single command generates **all four outputs**:
+This single command generates **all five outputs**:
 1. ✅ Appends test cases to `TEST_CASES.md`
-2. ✅ Creates `test-data/<dataFile>.yaml`
-3. ✅ Creates `tests/<testFile>.test.ts`
-4. ✅ Creates `pages/<PageObject>.ts`
+2. ✅ Creates `manual-test-cases/US-XX-*-test-cases.md` (standalone manual QA test cases)
+3. ✅ Creates `test-data/<dataFile>.yaml`
+4. ✅ Creates `tests/<testFile>.test.ts`
+5. ✅ Creates `pages/<PageObject>.ts`
 
-## 2.2 — Generate Only Test Cases + Data (No Scripts)
+## 2.2 — Generate Only Test Cases + Manual TCs + Data (No Scripts)
 
 ```bash
 npm run generate:tc
 ```
 
-Use this when you only want documentation and test data — no code generation.
+Use this when you only want documentation, manual test cases, and test data — no code generation.
 
-## 2.3 — Generate Only Scripts + Page Objects (No Docs)
+## 2.3 — Generate Only Manual Test Case Documents
+
+```bash
+npm run generate:manual
+```
+
+Use this when you **only** want the standalone manual test case files — no code, no traceability matrix updates.
+Perfect for QA teams that execute tests manually.
+
+## 2.4 — Generate Only Scripts + Page Objects (No Docs)
 
 ```bash
 npm run generate:scripts
 ```
 
-Use this when test cases are already documented and you only need the code.
+Use this when test cases are already documented and you only need the automation code.
 
-## 2.4 — Generate for a Specific User Story Only
+## 2.5 — Generate for a Specific User Story Only
 
 ```bash
 npm run generate -- US-06-checkout
@@ -266,10 +277,11 @@ npm run generate -- US-06-checkout
 After running `npm run generate` for a story like `US-06-checkout.yaml` with 2 acceptance criteria:
 
 ```
-  ✅ TEST_CASES.md                         ← Appended with US-06 section
-  ✅ test-data/checkout-tests.yaml         ← Test data for TC17, TC18
-  ✅ tests/checkout.test.ts                ← Playwright test script
-  ✅ pages/CheckoutPage.ts                 ← Page Object Model
+  ✅ TEST_CASES.md                                            ← Appended with US-06 section
+  ✅ manual-test-cases/US-06-checkout-flow-test-cases.md       ← Manual QA test cases
+  ✅ test-data/checkout-tests.yaml                             ← Test data for TC17, TC18
+  ✅ tests/checkout.test.ts                                    ← Playwright test script
+  ✅ pages/CheckoutPage.ts                                     ← Page Object Model
 ```
 
 **Console output** will look like:
@@ -695,11 +707,13 @@ cp user-stories/_TEMPLATE.yaml user-stories/US-07-profile.yaml
 npm run generate                        # Full pipeline
 
 # ─── Generate partial ───
-npm run generate:tc                     # Test cases + YAML data only
+npm run generate:tc                     # Test cases + manual TCs + YAML data only
+npm run generate:manual                 # Manual test case documents only
 npm run generate:scripts                # Test scripts + page objects only
 npm run generate -- US-07-profile       # One specific story only
 
 # ─── Review generated files ───
+# → manual-test-cases/US-07-*-test-cases.md (manual QA test cases — ready to use!)
 # → test-data/profile-tests.yaml       (verify data)
 # → pages/ProfilePage.ts               (customize selectors — fix TODOs)
 # → tests/profile.test.ts              (review test structure)

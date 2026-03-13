@@ -6,22 +6,25 @@
 //   Reads User Story YAML files from user-stories/ and generates:
 //     1. TEST_CASES.md  — appends new test cases with traceability
 //     2. test-data/*.yaml — YAML test data for each user story
-//     3. tests/*.test.ts  — Playwright test scripts
-//     4. pages/*Page.ts   — Page Object Model files
+//     3. manual-test-cases/*.md — standalone manual test case documents
+//     4. tests/*.test.ts  — Playwright test scripts
+//     5. pages/*Page.ts   — Page Object Model files
 //
 // USAGE:
-//   npm run generate                  → Full pipeline (TC + scripts)
-//   npm run generate:tc               → Generate test cases + YAML only
+//   npm run generate                  → Full pipeline (all 5 outputs)
+//   npm run generate:tc               → Generate test cases + YAML + manual TCs only
+//   npm run generate:manual           → Generate manual test case documents only
 //   npm run generate:scripts          → Generate test scripts + page objects only
 //   npm run generate -- US-05-search  → Generate only for one story
 //
 // FLOW:
 //   user-stories/US-05-search.yaml
 //       │
-//       ├──→ TEST_CASES.md          (test case documentation)
-//       ├──→ test-data/search-tests.yaml  (YAML test data)
-//       ├──→ tests/search.test.ts         (Playwright test script)
-//       └──→ pages/SearchPage.ts          (Page Object class)
+//       ├──→ TEST_CASES.md                              (traceability matrix)
+//       ├──→ test-data/search-tests.yaml                (YAML test data)
+//       ├──→ manual-test-cases/US-05-*-test-cases.md    (manual test cases)
+//       ├──→ tests/search.test.ts                       (Playwright test script)
+//       └──→ pages/SearchPage.ts                        (Page Object class)
 // =============================================================================
 
 import * as fs from 'fs';
@@ -77,6 +80,7 @@ const TEST_DATA_DIR= path.join(ROOT, 'test-data');
 const TESTS_DIR    = path.join(ROOT, 'tests');
 const PAGES_DIR    = path.join(ROOT, 'pages');
 const TC_FILE      = path.join(ROOT, 'TEST_CASES.md');
+const MANUAL_TC_DIR= path.join(ROOT, 'manual-test-cases');
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  HELPERS
@@ -631,6 +635,187 @@ function generateTestCasesMd(story: UserStory): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  GENERATOR 5: STANDALONE MANUAL TEST CASES (per user story)
+// ─────────────────────────────────────────────────────────────────────────────
+//  Generates a separate markdown file per user story in manual-test-cases/
+//  containing ONLY the manual QA test cases — no code, no automation details.
+//  Format mirrors what a manual tester would get in JIRA, Excel, or TestRail.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function generateManualTestCases(story: UserStory): string {
+  const lines: string[] = [];
+  const now = new Date().toISOString().split('T')[0];
+  const totalTCs = story.acceptanceCriteria.length;
+
+  // ── HEADER ──
+  lines.push(`# ╔${'═'.repeat(73)}╗`);
+  lines.push(`# ║  📋 MANUAL TEST CASES — ${story.storyId}: ${story.title.padEnd(40).slice(0, 40)}    ║`);
+  lines.push(`# ╠${'═'.repeat(73)}╣`);
+  lines.push(`# ║  Generated: ${now}                                                    ║`);
+  lines.push(`# ║  Source: user-stories/${story.storyId.toLowerCase()}-*.yaml                              ║`);
+  lines.push(`# ║  Total Test Cases: ${String(totalTCs).padEnd(53)}║`);
+  lines.push(`# ║                                                                         ║`);
+  lines.push(`# ║  PURPOSE: This document contains manual test cases that can be           ║`);
+  lines.push(`# ║  executed by a QA tester WITHOUT any automation. Each test case           ║`);
+  lines.push(`# ║  includes preconditions, detailed steps, expected results, and            ║`);
+  lines.push(`# ║  test data — ready for manual execution or import into JIRA/TestRail.     ║`);
+  lines.push(`# ╚${'═'.repeat(73)}╝`);
+  lines.push('');
+  lines.push('---');
+  lines.push('');
+
+  // ── USER STORY SUMMARY ──
+  lines.push('## 📖 User Story');
+  lines.push('');
+  lines.push('| Field | Detail |');
+  lines.push('| --- | --- |');
+  lines.push(`| **Story ID** | ${story.storyId} |`);
+  lines.push(`| **Title** | ${story.title} |`);
+  lines.push(`| **Description** | ${story.description} |`);
+  lines.push(`| **Priority** | ${story.priority} |`);
+  lines.push(`| **Module** | ${story.module} |`);
+  lines.push(`| **Application URL** | \`${story.baseUrl}\` |`);
+  lines.push(`| **Starting Page** | \`${story.pagePath}\` |`);
+  lines.push('');
+
+  // ── ACCEPTANCE CRITERIA CHECKLIST ──
+  lines.push('## ✅ Acceptance Criteria');
+  lines.push('');
+  for (let i = 0; i < story.acceptanceCriteria.length; i++) {
+    const ac = story.acceptanceCriteria[i]!;
+    lines.push(`- [ ] **AC-${i + 1}** (${ac.id}): ${ac.title}`);
+  }
+  lines.push('');
+  lines.push('---');
+  lines.push('');
+
+  // ── TEST CASE SUMMARY TABLE ──
+  lines.push('## 📊 Test Case Summary');
+  lines.push('');
+  lines.push('| # | Test Case ID | XRAY Key | Title | Type | Priority | Status |');
+  lines.push('| --- | --- | --- | --- | --- | --- | --- |');
+  for (let i = 0; i < story.acceptanceCriteria.length; i++) {
+    const ac = story.acceptanceCriteria[i]!;
+    const typeLabel = ac.type.charAt(0).toUpperCase() + ac.type.slice(1);
+    const prioLabel = ac.priority.charAt(0).toUpperCase() + ac.priority.slice(1);
+    lines.push(`| ${i + 1} | ${ac.tcId} | ${ac.id} | ${ac.title} | ${typeLabel} | ${prioLabel} | ⬜ Not Run |`);
+  }
+  lines.push('');
+  lines.push('---');
+  lines.push('');
+
+  // ── INDIVIDUAL TEST CASES ──
+  for (let tcIdx = 0; tcIdx < story.acceptanceCriteria.length; tcIdx++) {
+    const ac = story.acceptanceCriteria[tcIdx]!;
+    const typeLabel = ac.type.charAt(0).toUpperCase() + ac.type.slice(1);
+    const prioLabel = ac.priority.charAt(0).toUpperCase() + ac.priority.slice(1);
+
+    lines.push(`## 🧪 ${ac.tcId}: ${ac.title}`);
+    lines.push('');
+
+    // ── Metadata table ──
+    lines.push('### Test Case Details');
+    lines.push('');
+    lines.push('| Field | Value |');
+    lines.push('| --- | --- |');
+    lines.push(`| **Test Case ID** | ${ac.tcId} |`);
+    lines.push(`| **XRAY Key** | ${ac.id} |`);
+    lines.push(`| **User Story** | ${story.storyId} — ${story.title} |`);
+    lines.push(`| **Acceptance Criteria** | AC-${tcIdx + 1} |`);
+    lines.push(`| **Type** | ${typeLabel} |`);
+    lines.push(`| **Priority** | ${prioLabel} |`);
+    lines.push(`| **Module** | ${story.module} |`);
+    lines.push(`| **Created** | ${now} |`);
+    lines.push(`| **Execution Status** | ⬜ Not Run |`);
+    lines.push(`| **Assigned To** | — |`);
+    lines.push('');
+
+    // ── Preconditions ──
+    lines.push('### Preconditions');
+    lines.push('');
+    if (ac.preconditions && ac.preconditions.length > 0) {
+      for (let i = 0; i < ac.preconditions.length; i++) {
+        lines.push(`${i + 1}. ${ac.preconditions[i]}`);
+      }
+    } else {
+      lines.push('1. Application is accessible');
+    }
+    lines.push('');
+
+    // ── Test Steps ──
+    lines.push('### Test Steps');
+    lines.push('');
+    lines.push('| Step # | Action (What to Do) | Expected Result (What Should Happen) | Pass/Fail |');
+    lines.push('| :---: | --- | --- | :---: |');
+    for (let i = 0; i < ac.steps.length; i++) {
+      const step = ac.steps[i]!;
+      lines.push(`| ${i + 1} | ${step.action} | ${step.expected} | ⬜ |`);
+    }
+    lines.push('');
+
+    // ── Test Data ──
+    lines.push('### Test Data');
+    lines.push('');
+    const dataEntries = Object.entries(ac.testData);
+    if (dataEntries.length > 0) {
+      lines.push('| Data Field | Value | Notes |');
+      lines.push('| --- | --- | --- |');
+      for (const [key, value] of dataEntries) {
+        const isExpected = key.startsWith('expected');
+        const note = isExpected ? 'Expected result / validation value' : 'Input data';
+        const displayVal = value === '' ? '*(empty string)*' : `\`${value}\``;
+        lines.push(`| ${key} | ${displayVal} | ${note} |`);
+      }
+    } else {
+      lines.push('*No specific test data required for this test case.*');
+    }
+    lines.push('');
+
+    // ── Result section ──
+    lines.push('### Execution Result');
+    lines.push('');
+    lines.push('| Field | Value |');
+    lines.push('| --- | --- |');
+    lines.push('| **Status** | ⬜ Not Run |');
+    lines.push('| **Executed By** | — |');
+    lines.push('| **Execution Date** | — |');
+    lines.push('| **Defect ID** | — |');
+    lines.push('| **Comments** | — |');
+    lines.push('');
+    lines.push('---');
+    lines.push('');
+  }
+
+  // ── FOOTER ──
+  lines.push('## 📝 Execution Summary');
+  lines.push('');
+  lines.push('| Metric | Count |');
+  lines.push('| --- | --- |');
+  lines.push(`| Total Test Cases | ${totalTCs} |`);
+  lines.push('| Passed | — |');
+  lines.push('| Failed | — |');
+  lines.push('| Blocked | — |');
+  lines.push('| Not Run | — |');
+  lines.push('');
+  lines.push('| Field | Value |');
+  lines.push('| --- | --- |');
+  lines.push('| **Tested By** | — |');
+  lines.push('| **Test Date** | — |');
+  lines.push('| **Environment** | — |');
+  lines.push('| **Browser** | — |');
+  lines.push('| **Build / Version** | — |');
+  lines.push('| **Sign-Off** | — |');
+  lines.push('');
+  lines.push('---');
+  lines.push('');
+  lines.push(`> 📎 **Traceability**: This test case document was auto-generated from User Story \`${story.storyId}\` (\`user-stories/${story.storyId.toLowerCase()}-*.yaml\`).`);
+  lines.push(`> Automated test scripts are in \`tests/${story.output.testFile}\` with data from \`test-data/${story.output.dataFile}\`.`);
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  STRING UTILITIES
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -762,6 +947,22 @@ function main(): void {
         fs.appendFileSync(TC_FILE, mdContent, 'utf-8');
         info(`Appended to TEST_CASES.md: ${story.storyId} section`);
         generatedFiles.push('TEST_CASES.md (appended)');
+      }
+    }
+
+    // ── GENERATE STANDALONE MANUAL TEST CASES ──
+    if (!mode || mode === 'tc' || mode === 'manual') {
+      ensureDir(MANUAL_TC_DIR);
+      const manualTcFilename = `${story.storyId}-${story.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '')}-test-cases.md`;
+      const manualTcPath = path.join(MANUAL_TC_DIR, manualTcFilename);
+
+      if (fs.existsSync(manualTcPath)) {
+        warn(`${manualTcFilename} already exists — skipping (delete to regenerate)`);
+      } else {
+        const manualContent = generateManualTestCases(story);
+        fs.writeFileSync(manualTcPath, manualContent, 'utf-8');
+        info(`Created: manual-test-cases/${manualTcFilename}`);
+        generatedFiles.push(`manual-test-cases/${manualTcFilename}`);
       }
     }
 

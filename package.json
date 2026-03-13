@@ -30,6 +30,7 @@
     "encrypt-password": "npx ts-node utils/security/crypto-helper.ts",
     "generate": "npx ts-node scripts/generate-from-stories.ts",
     "generate:tc": "npx ts-node scripts/generate-from-stories.ts tc",
+    "generate:manual": "npx ts-node scripts/generate-from-stories.ts manual",
     "generate:scripts": "npx ts-node scripts/generate-from-stories.ts scripts",
     "lint": "npx tsc --noEmit",
     "clean": "rm -rf test-results playwright-report reports/execution-report-*.html logs/*.log dist"
