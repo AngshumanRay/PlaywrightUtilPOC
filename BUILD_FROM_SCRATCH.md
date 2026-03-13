@@ -58,7 +58,7 @@ echo "✅ Created project directory: $PROJECT_DIR"
 # Create folder structure
 mkdir -p config pages tests utils/api utils/database utils/email \
          utils/excel utils/helpers utils/jira-xray utils/reporting \
-         utils/security reports logs
+         utils/security reports logs scripts user-stories manual-test-cases
 echo "✅ Created folder structure"
 
 
@@ -106,6 +106,11 @@ cat > "package.json" << 'ENDOFFILE_package_json'
     "run:headed": "RUN_HEADLESS=false npx playwright test && open reports/$(ls -t reports/ | head -1)",
 
     "encrypt-password": "npx ts-node utils/security/crypto-helper.ts",
+
+    "generate": "npx ts-node scripts/generate-from-stories.ts",
+    "generate:tc": "npx ts-node scripts/generate-from-stories.ts tc",
+    "generate:scripts": "npx ts-node scripts/generate-from-stories.ts scripts",
+    "generate:manual": "npx ts-node scripts/generate-from-stories.ts manual",
 
     "lint": "npx tsc --noEmit",
     "clean": "rm -rf test-results playwright-report reports/execution-report-*.html logs/*.log dist"
@@ -9438,7 +9443,15 @@ After running the script, you'll have this project structure:
 │   └── playwright-dev.test.ts    ← 5 navigation tests (TC07–TC11)
 │
 ├── reports/                      ← HTML reports (auto-generated)
-└── logs/                         ← Log files (auto-generated)
+├── logs/                         ← Log files (auto-generated)
+├── manual-test-cases/            ← Auto-generated manual QA test case documents
+│   └── US-*-test-cases.md        ←   Standalone QA docs (preconditions, steps, expected results)
+├── user-stories/                 ← User story YAML files (input for generator)
+│   ├── _TEMPLATE.yaml            ←   Copy this to create a new story
+│   └── US-05-search.yaml         ←   Sample: Search Functionality
+└── scripts/
+    ├── init-project.ts           ← Project initializer (npm run init)
+    └── generate-from-stories.ts  ← Auto-generator: Stories → TCs → Scripts → Manual QA docs
 ```
 
 **Total: 29 source files, 11 test cases (base), ~9,000 lines of code.**
@@ -9459,6 +9472,10 @@ After running the script, you'll have this project structure:
 | `npm run run:headed` | Run tests with visible browser |
 | `npm run test:debug` | Run with Playwright Inspector |
 | `open reports/execution-report-*.html` | View HTML report |
+| `npm run generate` | Full auto-generation pipeline (Stories → YAML + scripts + pages + TEST_CASES.md + manual TCs) |
+| `npm run generate:tc` | Generate test cases + YAML data only |
+| `npm run generate:scripts` | Generate test scripts + page objects only |
+| `npm run generate:manual` | Generate standalone manual QA test case documents only |
 
 ---
 
@@ -9489,7 +9506,8 @@ TEST_TIMEOUT=60000                     # Increase for slow apps
 
 ---
 
-*Generated: 5 March 2026 | Last updated: 6 March 2026*
+*Generated: 5 March 2026 | Last updated: 13 March 2026*
 *Framework: Playwright AutoAgent – AI Automation Framework*
-*Source files: 33 | Test cases: 13 (3 Login + 3 API + 5 Navigation + 2 Iframe) | Total lines: ~10,000*
-*Note: This script creates the base 11 tests (TC01–TC11). For iframe tests (TC12–TC13), YAML data-driven setup, and test-data-loader, see the full repo on GitHub or the latest .md docs.*
+*Source files: 33+ | Test cases: 13 (3 Login + 3 API + 5 Navigation + 2 Iframe) | Total lines: ~10,000+*
+*Auto-Generator: User Stories (YAML) → test data + scripts + page objects + TEST_CASES.md + manual QA test cases*
+*Note: This script creates the base 11 tests (TC01–TC11). For iframe tests (TC12–TC13), YAML data-driven setup, auto-generation pipeline, and test-data-loader, see the full repo on GitHub or the latest .md docs.*

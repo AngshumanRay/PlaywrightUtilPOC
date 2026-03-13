@@ -86,6 +86,7 @@ Here's everything this framework can do, at a glance:
 │     ✅ Accessibility (a11y)  — WCAG scan run automatically after each UI test│
 │     ✅ Feature Toggles      — .frameworkrc controls capabilities on/off  │
 │     ✅ Project Init Script  — npm run init scaffolds new consumers       │
+│     ✅ Auto-Generator       — User Stories (YAML) → TCs, scripts, manual QA docs │
 │                                                                          │
 │  🟡 READY (just add credentials in .env to activate):                    │
 │     📋 JIRA XRAY      — fetch test cases, create executions, push results│
@@ -2056,6 +2057,9 @@ The framework will show your tool in the Utility Status Dashboard:
 | **`test-data/api-tests.yaml`** | API test data: endpoints, payloads, expected status codes, `run: yes/no` toggle |
 | **`logs/test-run-*.log`** | Per-run log files with PASS/FAIL summary prepended at the top |
 | **`scripts/init-project.ts`** | Project initializer — `npm run init` creates `.env`, starter templates, installs browsers |
+| **`scripts/generate-from-stories.ts`** | Auto-generator — reads `user-stories/*.yaml` → generates test data YAML, test scripts, page objects, TEST_CASES.md sections, and standalone manual QA test case documents |
+| **`user-stories/*.yaml`** | User story definitions (input for the auto-generation pipeline) |
+| **`manual-test-cases/US-*-test-cases.md`** | Auto-generated standalone manual QA test cases (preconditions, test steps, expected results, pass/fail, sign-off) |
 | **`.frameworkrc`** | Feature toggle config — enable/disable capabilities without code changes |
 | **`playwright.config.ts`** | Playwright settings (browsers, timeouts, retries) |
 | **`.env` timeouts** | `TEST_TIMEOUT`, `EXPECT_TIMEOUT`, `ACTION_TIMEOUT`, `NAVIGATION_TIMEOUT` |
@@ -2085,6 +2089,7 @@ Every utility is controlled by your `.env` file. Here's the master switch for ea
 | **Parameterized Testing** | Add `dataSets:` array in YAML + use `getTestDataSets()` in test code | Use flat YAML (no `dataSets:`) — `getTestDataSets()` returns a single `[{label:'default'}]` |
 | **Feature Toggles** | Edit `.frameworkrc` — set features to `true` or `false` | Delete `.frameworkrc` (framework uses defaults) |
 | **Project Init** | Run `npm run init` — creates `.env`, starters, installs browsers | Only needed once for new consumers |
+| **Auto-Generator** | Run `npm run generate` (full) or `npm run generate:manual` (manual TCs only) | Don't run it — only needed when adding stories |
 | **Screenshots** | Always on automatically | Can't disable |
 | **Logger** | Always on automatically | Can't disable |
 | **Log File PASS/FAIL** | Always on — summary prepended to log file after every run | Can't disable |
@@ -2099,7 +2104,8 @@ Every utility is controlled by your `.env` file. Here's the master switch for ea
 
 ---
 
-*Last updated: 7 March 2026*
+*Last updated: 13 March 2026*
 *Framework: Playwright AutoAgent – AI Automation Framework*
 *Tests: 4 Login (UI, parameterized) + 3 API (REST) + 5 Navigation (UI) + 2 Iframe (UI) = 14 total*
+*Auto-Generator: User Stories (YAML) → test data + scripts + page objects + TEST_CASES.md + manual QA test cases*
 *Next: Read [WALKTHROUGH.md](WALKTHROUGH.md) to see the end-to-end XRAY flow, or [WRITE_A_TEST.md](WRITE_A_TEST.md) to write your first test.*

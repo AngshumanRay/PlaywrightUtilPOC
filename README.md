@@ -27,7 +27,7 @@ open reports/execution-report-*.html   # View the visual report in your browser
 | **[WRITE_A_TEST.md](WRITE_A_TEST.md)** | Copy-paste guide to write your first test (includes iframe section) | **Non-technical users** |
 | **[CAPABILITIES.md](CAPABILITIES.md)** | Every feature & skill explained in plain English (also serves as SKILLS.md) | **New team members exploring the framework** |
 | **[TEST_CASES.md](TEST_CASES.md)** | User Stories → Test Cases → Test Scripts traceability matrix | **QA leads, business analysts, auditors** |
-| **[GENERATE_TESTS_FROM_STORIES.md](GENERATE_TESTS_FROM_STORIES.md)** | Auto-generate test cases & scripts from User Stories (YAML) | **BAs, POs, QA leads using the generator pipeline** |
+| **[GENERATE_TESTS_FROM_STORIES.md](GENERATE_TESTS_FROM_STORIES.md)** | Auto-generate manual QA test cases, automation scripts & data from User Stories (YAML) | **BAs, POs, QA leads using the generator pipeline** |
 | **[WALKTHROUGH.md](WALKTHROUGH.md)** | End-to-end XRAY flow with diagrams | **Anyone learning how JIRA reporting works** |
 | **[HOWTO_5_NAVIGATION_TESTS.md](HOWTO_5_NAVIGATION_TESTS.md)** | Step-by-step guide: how the 5 navigation tests were built | **Anyone adding new test suites** |
 | **[docs/RUN_REPORT_*.md](docs/)** | Auto-generated run reports | Anyone reviewing past test runs |
@@ -138,9 +138,12 @@ project-root/
 │   ├── _TEMPLATE.yaml            ←   Copy this to create a new user story
 │   └── US-05-search.yaml         ←   Sample: Search Functionality (3 test cases)
 │
+├── manual-test-cases/            ← 📝 AUTO-GENERATED MANUAL QA TEST CASES
+│   └── US-*-test-cases.md        ←   Standalone QA docs (preconditions, steps, expected results)
+│
 ├── scripts/                      ← BUILD & INIT SCRIPTS
 │   ├── init-project.ts           ← Project initializer for new consumers (npm run init)
-│   └── generate-from-stories.ts  ← Auto-generator: User Stories → TCs → Scripts
+│   └── generate-from-stories.ts  ← Auto-generator: User Stories → TCs → Scripts → Manual Test Cases
 │
 ├── playwright.config.ts          ← Playwright settings (browsers, timeouts, etc.)
 ├── .env                          ← YOUR credentials (DO NOT COMMIT TO GIT!)
@@ -304,10 +307,11 @@ npm run encrypt-password
 # Clean up generated artifacts (reports, logs, test-results)
 npm run clean
 
-# ─── AUTO-GENERATION PIPELINE (User Stories → Test Cases → Test Scripts) ───
-npm run generate              # Full pipeline: generates YAML + test scripts + page objects + TEST_CASES.md
+# ─── AUTO-GENERATION PIPELINE (User Stories → Test Cases → Scripts → Manual QA Docs) ───
+npm run generate              # Full pipeline: generates YAML + test scripts + page objects + TEST_CASES.md + manual test cases
 npm run generate:tc           # Generate test cases + YAML data only
 npm run generate:scripts      # Generate test scripts + page objects only
+npm run generate:manual       # Generate standalone manual QA test case documents only
 ```
 
 > **New to tests?** Just run `npm test` — it runs everything and generates the HTML report in `reports/`.
@@ -840,8 +844,9 @@ npm run test:debug
 
 ---
 
-*Last updated: 7 March 2026*
+*Last updated: 13 March 2026*
 *Framework: Playwright AutoAgent – AI Automation Framework*
 *Tests: 4 Login (UI, parameterized) + 3 API (REST) + 5 Navigation (UI) + 2 Iframe (UI) = 14 total*
 *XRAY: Test Set = manual setup, Test Execution onward = fully automated*
 *Packaging: `npm run init` for new consumers | `.frameworkrc` for feature toggles*
+*Auto-Generator: User Stories (YAML) → test data + automation scripts + page objects + TEST_CASES.md + manual QA test cases*

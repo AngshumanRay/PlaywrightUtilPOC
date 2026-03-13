@@ -723,6 +723,9 @@ reports/execution-report-2026-03-03.html
 | `test-data/*.yaml` | The "answer sheets" — 2 YAML files (`ui-tests.yaml` + `api-tests.yaml`) with test inputs, expected results, `run: yes/no` toggle, `dataSets:` for parameterized runs, and `${ENC:...}` encrypted passwords |
 | `logs/test-run-*.log` | The "diary" — log file for each run, with a PASS/FAIL summary at the very top |
 | `scripts/init-project.ts` | The "doorman" — `npm run init` scaffolds the project for new consumers (creates `.env`, starter templates, installs browsers) |
+| `scripts/generate-from-stories.ts` | The "factory" — reads `user-stories/*.yaml` and auto-generates test data YAML, test scripts, page objects, TEST_CASES.md sections, and standalone manual QA test case documents |
+| `user-stories/*.yaml` | The "blueprints" — user story definitions that feed the auto-generation pipeline |
+| `manual-test-cases/US-*-test-cases.md` | The "QA deliverables" — auto-generated standalone manual test cases with preconditions, test steps, expected results, pass/fail columns, and sign-off sections |
 | `.frameworkrc` | The "control panel" — feature toggles to enable/disable capabilities without code changes |
 | `utils/framework/global-setup.ts` | The "pre-flight checklist" — runs once before any test (auth, fetch, create execution) |
 | `utils/framework/global-teardown.ts` | The "cleanup crew" — runs once after all tests (uploads results, generates report) |
@@ -966,6 +969,6 @@ When tests run, the terminal shows messages like this. Here's what each means:
 
 ---
 
-*Last updated: 7 March 2026*
-*Framework: Playwright AutoAgent – AI Automation Framework v1.4.0 — 14 tests (4 Login + 3 API + 5 Navigation + 2 Iframe), full HTML report, parameterized testing, packaging, comprehensive XRAY integration*
+*Last updated: 13 March 2026*
+*Framework: Playwright AutoAgent – AI Automation Framework v1.4.0 — 14 tests (4 Login + 3 API + 5 Navigation + 2 Iframe), full HTML report, parameterized testing, packaging, auto-generation pipeline, comprehensive XRAY integration*
 *Next: Read [CAPABILITIES.md](CAPABILITIES.md) to explore every feature, or [WRITE_A_TEST.md](WRITE_A_TEST.md) to write your first test.*

@@ -293,18 +293,23 @@ VIEWPORT_HEIGHT=1080
 │   │   ├── database/           ← DB connection helpers
 │   │   ├── email/              ← Email verification
 │   │   ├── reporting/          ← HTML report generator
-│   │   └── index.ts            ← Barrel exports
+│   └── index.ts            ← Barrel exports
 │   ├── pages/BasePage.ts       ← Generic iframe & page helpers
 │   ├── config/environment.ts   ← Multi-env resolver
 │   ├── playwright.config.ts    ← Pre-configured (reads .env)
 │   ├── tsconfig.json           ← TypeScript config
-│   └── scripts/init-project.ts ← Initializer script
+│   └── scripts/
+│       ├── init-project.ts          ← Initializer script
+│       └── generate-from-stories.ts  ← Auto-generator: Stories → TCs → Scripts → Manual QA docs
 │
-├── ✏️  YOUR CODE (modify these) ─────────────────────────
+├── ✏️  YOUR CODE (modify these) ───────────────────────
 │   ├── .env                    ← Your secrets & configuration
 │   ├── test-data/
 │   │   ├── ui-tests.yaml       ← Your UI test data
 │   │   └── api-tests.yaml      ← Your API test data
+│   ├── user-stories/           ← Your user story YAML files (input for generator)
+│   │   ├── _TEMPLATE.yaml      ← Copy this to create a new story
+│   │   └── US-05-search.yaml   ← Sample story
 │   ├── tests/
 │   │   ├── my-app.test.ts      ← Your test cases
 │   │   └── ...more tests...
@@ -317,12 +322,15 @@ VIEWPORT_HEIGHT=1080
 │   ├── reports/                ← HTML execution reports
 │   ├── logs/                   ← Daily rotating log files
 │   ├── test-results/           ← Playwright screenshots/videos
-│   └── playwright-report/      ← Playwright HTML report
+│   ├── playwright-report/      ← Playwright HTML report
+│   └── manual-test-cases/      ← Auto-generated manual QA test case documents
 │
-└── 📖 DOCUMENTATION ─────────────────────────────────────
+└── 📖 DOCUMENTATION ─────────────────────────
     ├── GETTING_STARTED.md      ← You are here!
     ├── WRITE_A_TEST.md         ← How to add tests
     ├── CAPABILITIES.md         ← Full feature list
+    ├── TEST_CASES.md           ← User Stories → Test Cases traceability
+    ├── GENERATE_TESTS_FROM_STORIES.md ← Auto-generation pipeline guide
     ├── README.md               ← Overview
     └── WALKTHROUGH.md          ← Architecture walkthrough
 ```
@@ -350,6 +358,10 @@ VIEWPORT_HEIGHT=1080
 | `npm run test:report` | Open last Playwright HTML report |
 | `npm run encrypt-password` | Encrypt a password for YAML |
 | `npm run lint` | Type-check all TypeScript |
+| `npm run generate` | Full auto-generation pipeline (Stories → YAML + scripts + pages + TEST_CASES.md + manual TCs) |
+| `npm run generate:tc` | Generate test cases + YAML data only |
+| `npm run generate:scripts` | Generate test scripts + page objects only |
+| `npm run generate:manual` | Generate standalone manual QA test case documents only |
 
 ---
 
