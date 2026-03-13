@@ -27,6 +27,7 @@ open reports/execution-report-*.html   # View the visual report in your browser
 | **[WRITE_A_TEST.md](WRITE_A_TEST.md)** | Copy-paste guide to write your first test (includes iframe section) | **Non-technical users** |
 | **[CAPABILITIES.md](CAPABILITIES.md)** | Every feature & skill explained in plain English (also serves as SKILLS.md) | **New team members exploring the framework** |
 | **[TEST_CASES.md](TEST_CASES.md)** | User Stories → Test Cases → Test Scripts traceability matrix | **QA leads, business analysts, auditors** |
+| **[GENERATE_TESTS_FROM_STORIES.md](GENERATE_TESTS_FROM_STORIES.md)** | Auto-generate test cases & scripts from User Stories (YAML) | **BAs, POs, QA leads using the generator pipeline** |
 | **[WALKTHROUGH.md](WALKTHROUGH.md)** | End-to-end XRAY flow with diagrams | **Anyone learning how JIRA reporting works** |
 | **[HOWTO_5_NAVIGATION_TESTS.md](HOWTO_5_NAVIGATION_TESTS.md)** | Step-by-step guide: how the 5 navigation tests were built | **Anyone adding new test suites** |
 | **[docs/RUN_REPORT_*.md](docs/)** | Auto-generated run reports | Anyone reviewing past test runs |
